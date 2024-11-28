@@ -1,6 +1,15 @@
 (ns compiler-clojure.core
-  (:require [instaparse.core :as insta])
+  (:require [instaparse.core :as insta]
+            [clojure.java.io :as io]
+            [clojure.string :as str])
   (:gen-class))
+
+(defn read-file [filename]
+  (try
+    (with-open [rdr (clojure.java.io/reader filename)]
+      (str/join "\n" (line-seq rdr)))
+    (catch java.io.FileNotFoundException e
+      (throw (Exception. (str "File was not found: " e))))))
 
 (def grammar
   (insta/parser
@@ -17,4 +26,5 @@
           static int Main(string args){}}}")
 
 (defn -main [& args]
-  (println "Hello, World!"))
+  (let [file-content (read-file (first args))]  
+    (grammar file-content)))
