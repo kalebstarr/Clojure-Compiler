@@ -14,16 +14,16 @@
 (def grammar
   (insta/parser
    "S = Program
-    Program = Using* <Whitespace> Namespace
-    Using = 'using' <Whitespace> Identifier <Whitespace> ';'
-    Namespace = 'namespace' <Whitespace> Identifier <Whitespace> '{' <Whitespace> Class <Whitespace> '}'
-    Class = 'class' <Whitespace> Identifier <Whitespace> '{' <Whitespace> Method (<Whitespace> Method)* <Whitespace> '}'
-    Method = 'static' <Whitespace> Type <Whitespace> Identifier <Whitespace> '(' <Whitespace> Type <Whitespace> Identifier <Whitespace> ')' <Whitespace> '{' <Whitespace> Methodcall (<Whitespace> Methodcall)* <Whitespace> '}'
-    Methodcall = (Methodcall | #'[a-zA-Z0-9.\\(\\)]*') <Whitespace> ';'
+    Program = Using* Namespace
+    Using = 'using' Identifier ';'
+    Namespace = 'namespace' Identifier '{' Class '}'
+    Class = 'class' Identifier '{' Method+ '}'
+    Method = 'static' Type Identifier '(' Type Identifier ')' '{' Methodcall+ '}'
+    Methodcall = #'[a-zA-Z0-9.]*' '(' (Methodcall | Identifier) ')' (';' | #'\\s'*)
     Type = 'void' | 'int' | 'string' | 'string[]'
-    Identifier = #'[a-zA-Z0-9]*'
-    <Whitespace> = #'\\s*'"))
+    Identifier = #'[a-zA-Z0-9.]*'"
+   :auto-whitespace :standard))
 
 (defn -main [& args]
   (let [file-content (read-file (first args))]  
-    (grammar file-content)))
+    (println (grammar file-content))))
