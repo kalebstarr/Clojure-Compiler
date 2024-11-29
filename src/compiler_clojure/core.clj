@@ -1,8 +1,15 @@
 (ns compiler-clojure.core
   (:require [instaparse.core :as insta]
             [clojure.java.io :as io]
-            [clojure.string :as str])
+            [clojure.string :as str]
+            [clojure.tools.cli :refer [parse-opts]])
   (:gen-class))
+
+(def cli-options
+  [["-c" "--compile FILE-PATH" "Specify file to compile"
+    :parse-fn str
+    :validate [#(seq %) "Filepath cannot be empty"]]
+   ["-h" "--help" "Show this help"]])
 
 (defn read-file [filename]
   (try
@@ -25,5 +32,22 @@
    :auto-whitespace :standard))
 
 (defn -main [& args]
-  (let [file-content (read-file (first args))]  
-    (println (grammar file-content))))
+  (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
+    (cond
+      errors
+      (do
+        (println "Error: " (str/join "\n" errors))
+        (System/exit 1))
+
+      (:help options)
+      (println summary)
+
+      (:compile options)
+      (let [file-path (:compile options)
+            file-content (read-file file-path)]
+        (println (grammar file-content)))
+
+      :else
+      (do
+        (println "No file specified. Use -h or --help for usage information.")
+        (System/exit 1)))))
