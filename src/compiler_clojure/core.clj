@@ -13,17 +13,16 @@
 
 (def grammar
   (insta/parser
-   "S = Namespace
+   "S = Program
+    Program = Using* <Whitespace> Namespace
+    Using = 'using' <Whitespace> Identifier <Whitespace> ';'
     Namespace = 'namespace' <Whitespace> Identifier <Whitespace> '{' <Whitespace> Class <Whitespace> '}'
     Class = 'class' <Whitespace> Identifier <Whitespace> '{' <Whitespace> Method (<Whitespace> Method)* <Whitespace> '}'
-    Method = 'static' <Whitespace> Type <Whitespace> Identifier <Whitespace> '(' <Whitespace> Type <Whitespace> Identifier <Whitespace> ')' <Whitespace> '{' <Whitespace> '}'
-    Type = 'void' | 'int' | 'string'
+    Method = 'static' <Whitespace> Type <Whitespace> Identifier <Whitespace> '(' <Whitespace> Type <Whitespace> Identifier <Whitespace> ')' <Whitespace> '{' <Whitespace> Methodcall (<Whitespace> Methodcall)* <Whitespace> '}'
+    Methodcall = (Methodcall | #'[a-zA-Z0-9.\\(\\)]*') <Whitespace> ';'
+    Type = 'void' | 'int' | 'string' | 'string[]'
     Identifier = #'[a-zA-Z0-9]*'
     <Whitespace> = #'\\s*'"))
-(grammar "namespace there {
-          class this {
-          static void Main(int args){}
-          static int Main(string args){}}}")
 
 (defn -main [& args]
   (let [file-content (read-file (first args))]  
