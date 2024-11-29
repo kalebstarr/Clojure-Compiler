@@ -7,7 +7,6 @@
 
 (def cli-options
   [["-c" "--compile FILE-PATH" "Specify file to compile"
-    :parse-fn str
     :validate [#(seq %) "Filepath cannot be empty"]]
    ["-h" "--help" "Show this help"]])
 
@@ -15,7 +14,7 @@
   (let [{:keys [options errors summary]} (parse-opts args cli-options)]
     (cond
       errors
-      {:status :error, :message (str "Error(s): " (str/join "\n" errors))} 
+      {:status :error, :message (str "Error(s): " (str/join "\n" errors))}
 
       (:help options)
       {:status :help, :message summary}
