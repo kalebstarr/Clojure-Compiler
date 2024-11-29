@@ -11,6 +11,21 @@
     :validate [#(seq %) "Filepath cannot be empty"]]
    ["-h" "--help" "Show this help"]])
 
+(defn parse-args [args]
+  (let [{:keys [options errors summary]} (parse-opts args cli-options)]
+    (cond
+      errors
+      {:status :error, :message (str "Error(s): " (str/join "\n" errors))} 
+
+      (:help options)
+      {:status :help, :message summary}
+
+      (:compile options)
+      {:status :success, :file (:compile options)}
+
+      :else
+      {:status :error, :message "No file specified. Use -h or --help for usage information."})))
+
 (defn read-file [filename]
   (try
     (with-open [rdr (clojure.java.io/reader filename)]
@@ -18,7 +33,7 @@
     (catch java.io.FileNotFoundException e
       (throw (Exception. (str "File was not found: " e))))))
 
-(def grammar
+(def csharp-grammar
   (insta/parser
    "S = Program
     Program = Using* Namespace
@@ -32,22 +47,9 @@
    :auto-whitespace :standard))
 
 (defn -main [& args]
-  (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
-    (cond
-      errors
-      (do
-        (println "Error: " (str/join "\n" errors))
-        (System/exit 1))
-
-      (:help options)
-      (println summary)
-
-      (:compile options)
-      (let [file-path (:compile options)
-            file-content (read-file file-path)]
-        (println (grammar file-content)))
-
-      :else
-      (do
-        (println "No file specified. Use -h or --help for usage information.")
-        (System/exit 1)))))
+  (let [{:keys [status message file]} (parse-args args)]
+    (case status
+      :error (do (println message) (System/exit 1))
+      :help (println message)
+      :success (let [file-content (read-file file)]
+                 (println (csharp-grammar file-content))))))
