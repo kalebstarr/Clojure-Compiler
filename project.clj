@@ -6,6 +6,7 @@
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [instaparse "1.5.0"]
                  [org.clojure/tools.cli "1.1.230"]]
+  :plugins [[lein-cloverage "1.2.2"]]
   :main ^:skip-aot compiler-clojure.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all
