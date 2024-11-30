@@ -30,6 +30,12 @@
     (catch java.io.FileNotFoundException e
       (throw (Exception. (str "File was not found: " e))))))
 
+(def custom-whitespace
+  (insta/parser
+   "ws = (#'\\s+' | Comment)*
+    
+    Comment = '//' #'.*' #'(?=\\r?\\n)'"))
+
 (def csharp-grammar
   (insta/parser
    "S = Program
@@ -44,12 +50,14 @@
     
     Method = 'static' Type Identifier '(' Type Identifier ')' '{' Methodcall+ '}'
     
-    Methodcall = Identifier '(' (Methodcall | Identifier) ')' (';' | #'\\s'*)
+    Methodcall = Identifier '(' (Nestedmethodcall | Identifier) ')' ';'
+
+    Nestedmethodcall = Identifier '(' (Nestedmethodcall | Identifier) ')'
     
     Type = 'void' | 'int' | 'string' | 'string[]'
     
     Identifier = #'[a-zA-Z0-9.]*'"
-   :auto-whitespace :standard))
+   :auto-whitespace custom-whitespace))
 
 (defn -main [& args]
   (let [{:keys [status message file]} (parse-args args)]
@@ -57,4 +65,6 @@
       :error (do (println message) (System/exit 1))
       :help (println message)
       :success (let [file-content (read-file file)]
-                 (println (csharp-grammar file-content))))))
+                 (println (csharp-grammar file-content :unhide :all))))))
+
+;; (-main "-c" "resources/Sample.cs")
