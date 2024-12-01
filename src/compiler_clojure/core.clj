@@ -1,7 +1,7 @@
 (ns compiler-clojure.core
-  (:require [instaparse.core :as insta]
-            [clojure.string :as str]
-            [clojure.tools.cli :refer [parse-opts]])
+  (:require [compiler-clojure.parser-core :as parser]
+            [clojure.tools.cli :refer [parse-opts]]
+            [clojure.string :as str])
   (:gen-class))
 
 (def cli-options
@@ -30,86 +30,10 @@
     (catch java.io.FileNotFoundException e
       (throw (Exception. (str "File was not found: " e))))))
 
-(def csharp-grammar
-  (insta/parser
-   "S = Program
-
-    Program = Using* Namespace
-
-    Using = 'using' Identifier ';'
-
-    Namespace = 'namespace' Identifier '{' ClassDeclaration '}'
-
-    ClassDeclaration = 'class' Identifier '{' MethodDeclaration+ '}'
-
-    MethodDeclaration = GenericMethodDeclaration | VoidMethodDeclaration
-    GenericMethodDeclaration = 'static' Type Identifier '(' ParameterList? ')' '{' (Comment | VariableDeclaration | Instruction)* '}'
-    VoidMethodDeclaration = 'static' 'void' Identifier '(' ParameterList? ')' '{' (Comment | VariableDeclaration | Instruction)* '}'
-    ParameterList = Parameter (',' Parameter)*
-    Parameter = (Type Identifier)
-
-    Identifier = #'[a-zA-Z_][a-zA-Z0-9_]*'
-
-    Type = 'bool' | (('int' | 'double' | 'string') #'\\[\\]'?)
-
-    Literal = IntegerLiteral | DoubleLiteral | StringLiteral | BooleanLiteral
-    IntegerLiteral = #'-?[0-9]+'
-    DoubleLiteral = #'-?[0-9]+\\.[0-9]+ | IntegerLiteral'
-    StringLiteral = #'\"(?:[^\\\"]|\\.)*\"'
-    BooleanLiteral = 'true' | 'false'
-
-    Operator = ArithmeticOperator | ComparisonOperator | BooleanOperator
-    ArithmeticOperator = Plus | Minus | Star | Slash | Modulo
-    Plus = '+'
-    Minus = '-'
-    Star = '*'
-    Slash = '/'
-    Modulo = '%'
-    ComparisonOperator = Equals | Smaller | Greater | Seq | Geq | Uneq
-    Equals = '=='
-    Smaller = '<'
-    Greater = '>'
-    Seq = '<=' 
-    Geq = '>='
-    Uneq = '!='
-    BooleanOperator = LogicAnd | LogicOr | LogicNot
-    LogicAnd = '&&'
-    LogicOr = '||'
-    LogicNot = '!'
-
-    Expression = Literal | Variable | MethodCall | '(' Expression ')' | Expression Operator Expression
-
-    Variable = Identifier
-    VariableDeclaration = Type Variable '=' Expression ';' | Type Variable ';' | VariableDeclarationBlock
-    VariableDeclarationBlock = '{' VariableDeclaration* '}'
-
-    Assignment = Variable '=' Expression ';'
-
-
-    Instruction = IfElseBlock | WhileBlock | MethodCall | ConsoleWrite | Assignment | InstructionBlock | InstructionReturn
-    InstructionBlock = '{' Instruction* '}'
-    IfElseBlock = IfBlock ElseBlock?
-    IfBlock = 'if' '(' Expression ')' (VariableDeclaration | InstructionBlock | Instruction)
-    ElseBlock = 'else' (VariableDeclaration | InstructionBlock | Instruction)
-    InstructionReturn = 'return' Expression ';'
-
-    WhileBlock = 'while' '(' Expression ')' (VariableDeclaration | InstructionBlock | Instruction)
-
-    MethodCall = Identifier '(' ArgumentList? ')'
-    ArgumentList = Expression (',' Expression)*
-
-    ConsoleWrite = 'Console.WriteLine' '(' Expression ')' ';'
-
-
-    Comment = SingleLineComment | MultiLineComment
-    SingleLineComment = '//' #'.*' #'(?=\\r?\\n)'
-    MultiLineComment = '/*' #'[^*]*\\*+(?:[^/*][^*]*\\*+)*/'"
-   :auto-whitespace :standard))
-
 (defn -main [& args]
   (let [{:keys [status message file]} (parse-args args)]
     (case status
       :error (do (println message) (System/exit 1))
       :help (println message)
       :success (let [file-content (read-file file)]
-                 (println (csharp-grammar file-content))))))
+                 (println (parser/csharp-grammar file-content))))))
