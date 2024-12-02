@@ -79,19 +79,17 @@
    :auto-whitespace :standard))
 
 (defn custom-print-failure [{:keys [reason line]}]
-  (print "Parse Error: Line: " line ": ")
+  (print (str "Parse Error: Line: " line ": "))
   (let [full-reasons (distinct (map :expecting
                                     (filter :full reason)))
         partial-reasons (distinct (map :expecting
                                        (filter (complement :full) reason)))
-        total (+ (count full-reasons) (count partial-reasons))]
-    (if (= total 1)
+        total (+ (count full-reasons) (count partial-reasons))
+        all-reasons (interpose ", " (concat full-reasons partial-reasons))]
+    (if (<= total 1)
       (print "Expected ")
       (print "Expected one of "))
 
-    (doseq [r full-reasons]
-      (insta-failure/print-reason r)
-      (print ", "))
-    (doseq [r partial-reasons]
-      (insta-failure/print-reason r)
-      (print ", "))))
+    (doseq [r all-reasons]
+      (print r))
+    (println)))
