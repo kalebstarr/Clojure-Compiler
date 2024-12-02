@@ -48,7 +48,7 @@
     LogicOr = '||'
     LogicNot = '!'
 
-    Expression = Literal | Variable | MethodCall | '(' Expression ')' | Expression Operator Expression
+    Expression = Literal | Variable | MethodCall | '(' Expression ')' | Expression Operator Expression | LogicNot Expression
 
     Variable = Identifier
     VariableDeclaration = Type Variable '=' Expression ';' | Type Variable ';' | VariableDeclarationBlock
