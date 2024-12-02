@@ -25,7 +25,7 @@
 
     Literal = IntegerLiteral | DoubleLiteral | StringLiteral | BooleanLiteral
     IntegerLiteral = #'-?[0-9]+'
-    DoubleLiteral = #'-?[0-9]+\\.[0-9]+ | IntegerLiteral'
+    DoubleLiteral = #'-?[0-9]+\\.[0-9]+' | IntegerLiteral
     StringLiteral = #'\"(?:[^\\\"]|\\.)*\"'
     BooleanLiteral = 'true' | 'false'
 
