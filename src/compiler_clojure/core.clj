@@ -1,7 +1,8 @@
 (ns compiler-clojure.core
   (:require [compiler-clojure.parser-core :as parser]
             [clojure.tools.cli :refer [parse-opts]]
-            [clojure.string :as str])
+            [clojure.string :as str]
+            [instaparse.core :as insta])
   (:gen-class))
 
 (def cli-options
@@ -35,5 +36,8 @@
     (case status
       :error (do (println message) (System/exit 1))
       :help (println message)
-      :success (let [file-content (read-file file)]
-                 (println (parser/csharp-grammar file-content))))))
+      :success (let [file-content (read-file file)
+                     parsed (parser/csharp-grammar file-content)]
+                 (if (insta/failure? (parser/csharp-grammar file-content))
+                   (parser/custom-print-failure (insta/get-failure parsed))
+                   (println parsed))))))
