@@ -9,7 +9,8 @@
   [["-c" "--compile FILE-PATH" "Specify file to compile"
     :validate [#(seq %) "Filepath cannot be empty"]]
    ["-h" "--help" "Show this help"]
-   ["-d" "--debug" "Call parser debug"]])
+   ["-d" "--debug FILE-PATH" "Specify file to call parser debug for ambiguous print"
+    :validate [#(seq %) "Filepath cannot be empty"]]])
 
 (defn parse-args [args]
   (let [{:keys [options errors summary]} (parse-opts args cli-options)]
@@ -24,7 +25,7 @@
       {:status :success, :file (:compile options)}
 
       (:debug options)
-      {:status :debug, :message "Debugging... Calling parse debugger"}
+      {:status :debug, :file (:debug options), :message "Debugging... Calling parse debugger"}
 
       :else
       {:status :error, :message "No file specified. Use -h or --help for usage information."})))
@@ -45,4 +46,6 @@
                  (if (insta/failure? (parser/csharp-grammar file-content))
                    (parser/custom-print-failure (insta/get-failure parsed))
                    (println parsed)))
-      :debug (parser/parser-debug))))
+      :debug (do
+               (println message)
+               (parser/parser-debug (read-file file))))))

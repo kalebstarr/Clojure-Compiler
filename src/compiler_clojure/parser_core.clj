@@ -71,8 +71,9 @@
     MultiLineComment = '/*' (#'[^*/]+' | '*' #'[^/]' | '/' #'[^*]')* '*/'"
    :auto-whitespace :standard))
 
-(defn parser-debug []
-  (let [grammar-string "using System;
+(defn parser-debug [file-content]
+  (if (empty? file-content)
+    (let [grammar-string "using System;
                          
                          namespace FibonacciRecursive {
                            class TestClass {
@@ -83,11 +84,15 @@
                              }
                            }
                          }"]
-    (println "Non-ambiguous:")
-    (println (csharp-grammar grammar-string)) 
-    (println "Ambiguous:")
-    (println (insta/parses csharp-grammar grammar-string))))
-(parser-debug)
+      (println "Non-ambiguous:")
+      (println (csharp-grammar grammar-string)) 
+      (println "Ambiguous:")
+      (println (insta/parses csharp-grammar grammar-string)))
+    ((println "Non-ambiguous:")
+     (println (csharp-grammar file-content))
+     (println "Ambiguous:")
+     (println (insta/parses csharp-grammar file-content)))))
+(parser-debug "")
 
 (defn custom-print-failure [{:keys [reason line]}]
   (print (str "Parse Error: Line: " line ": "))
