@@ -14,8 +14,8 @@
     ClassDeclaration = 'class' Identifier '{' MethodDeclaration+ '}'
 
     MethodDeclaration = GenericMethodDeclaration | VoidMethodDeclaration
-    GenericMethodDeclaration = 'static' Type Identifier '(' ParameterList? ')' '{' (Comment | VariableDeclaration | Instruction)* '}'
-    VoidMethodDeclaration = 'static' 'void' Identifier '(' ParameterList? ')' '{' (Comment | VariableDeclaration | Instruction)* '}'
+    GenericMethodDeclaration = 'static' Type Identifier '(' ParameterList? ')' '{' (Comment | VariableDeclaration | VariableAssignment)* '}'
+    VoidMethodDeclaration = 'static' 'void' Identifier '(' ParameterList? ')' '{' (Comment | VariableDeclaration | VariableAssignment)* '}'
     ParameterList = Parameter (',' Parameter)*
     Parameter = (Type Identifier)
 
@@ -25,7 +25,7 @@
 
     Literal = IntegerLiteral | DoubleLiteral | StringLiteral | BooleanLiteral
     IntegerLiteral = #'-?[0-9]+'
-    DoubleLiteral = #'-?[0-9]+\\.[0-9]+' | IntegerLiteral
+    DoubleLiteral = #'-?[0-9]+\\.[0-9]+'
     StringLiteral = #'\"(?:[^\\\"]|\\.)*\"'
     BooleanLiteral = 'true' | 'false'
 
@@ -48,34 +48,46 @@
     LogicOr = '||'
     LogicNot = '!'
 
-    Expression = Literal | Variable | MethodCall | '(' Expression ')' | Expression Operator Expression | LogicNot Expression
 
-    Variable = Identifier
-    VariableDeclaration = Type Variable '=' Expression ';' | Type Variable ';' | VariableDeclarationBlock
-    VariableDeclarationBlock = '{' VariableDeclaration* '}'
+    Expression = LogicalExpression
+    
+    LogicalExpression = ComparisonExpression (LogicalOperator ComparisonExpression)*
+    LogicalOperator = LogicAnd | LogicOr
+    
+    ComparisonExpression = ArithmeticExpression (ComparisonOperator ArithmeticExpression)?
+    
+    ArithmeticExpression = Term ((Plus | Minus) Term)*
+    Term = Factor ((Star | Slash | Modulo) Factor)*
+    Factor = LogicNot? (Literal | '(' Expression ')' | Identifier)
 
-    Assignment = Variable '=' Expression ';'
 
-
-    Instruction = IfElseBlock | WhileBlock | MethodCall | ConsoleWrite | Assignment | InstructionBlock | InstructionReturn
-    InstructionBlock = '{' Instruction* '}'
-    IfElseBlock = IfBlock ElseBlock?
-    IfBlock = 'if' '(' Expression ')' (VariableDeclaration | InstructionBlock | Instruction)
-    ElseBlock = 'else' (VariableDeclaration | InstructionBlock | Instruction)
-    InstructionReturn = 'return' Expression ';'
-
-    WhileBlock = 'while' '(' Expression ')' (VariableDeclaration | InstructionBlock | Instruction)
-
-    MethodCall = Identifier '(' ArgumentList? ')'
-    ArgumentList = Expression (',' Expression)*
-
-    ConsoleWrite = 'Console.WriteLine' '(' Expression ')' ';'
+    VariableDeclaration = Type Identifier '=' Expression ';'
+    VariableAssignment = Identifier '=' Expression ';'
+    VariableDeclarationBlock = '{' VariableDeclaration+ '}'
 
 
     Comment = SingleLineComment | MultiLineComment
     SingleLineComment = '//' #'.*' #'(?=\\r?\\n)'
-    MultiLineComment = '/*' #'[^*]*\\*+(?:[^/*][^*]*\\*+)*/'"
+    MultiLineComment = '/*' (#'[^*/]+' | '*' #'[^/]' | '/' #'[^*]')* '*/'"
    :auto-whitespace :standard))
+
+(defn parser-debug []
+  (let [grammar-string "using System;
+                         
+                         namespace FibonacciRecursive {
+                           class TestClass {
+                             static void Main(string[] args) {
+                                 int this = 9 + 9 + 9;
+                        that = 9 || 9 && 9;
+                        int then = 8 == that && there != then && 8 + 10;
+                             }
+                           }
+                         }"]
+    (println "Non-ambiguous:")
+    (println (csharp-grammar grammar-string)) 
+    (println "Ambiguous:")
+    (println (insta/parses csharp-grammar grammar-string))))
+(parser-debug)
 
 (defn custom-print-failure [{:keys [reason line]}]
   (print (str "Parse Error: Line: " line ": "))
