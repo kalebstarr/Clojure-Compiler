@@ -70,6 +70,7 @@
                 | InstructionBlock
                 | InstructionReturn
                 | ConsoleWrite
+                | <Comment>
     InstructionBlock = '{' Instruction* '}'
     InstructionReturn = 'return' Expression ';'
 
@@ -86,7 +87,11 @@
     
     WhileBlock = 'while' '(' Expression ')' Instruction
                 
-    ConsoleWrite = 'Console.WriteLine' '(' Expression ')' ';'"
+    ConsoleWrite = 'Console.WriteLine' '(' Expression ')' ';'
+                
+    Comment = SingleLineComment | MultiLineComment
+    SingleLineComment = #'//.*'
+    MultiLineComment = '/*' #'[^*]*\\*+(?:[^/*][^*]*\\*+)*/'"
    :auto-whitespace :standard))
 
 (defn parser-debug [file-content]
