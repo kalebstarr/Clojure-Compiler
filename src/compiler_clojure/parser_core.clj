@@ -14,8 +14,9 @@
     ClassDeclaration = 'class' Identifier '{' MethodDeclaration+ '}'
 
     MethodDeclaration = GenericMethodDeclaration | VoidMethodDeclaration
-    GenericMethodDeclaration = 'static' Type Identifier '(' ParameterList? ')' '{' (Instruction)* '}'
-    VoidMethodDeclaration = 'static' 'void' Identifier '(' ParameterList? ')' '{' (Instruction)* '}'
+    GenericMethodDeclaration = 'static' Type Identifier '(' ParameterList? ')' MethodBody
+    VoidMethodDeclaration = 'static' 'void' Identifier '(' ParameterList? ')' MethodBody
+    MethodBody = '{' (Instruction)* '}'
     ParameterList = Parameter (',' Parameter)*
     Parameter = Type Identifier
 
@@ -23,47 +24,17 @@
 
     Type = 'bool' | (('int' | 'double' | 'string') #'\\[\\]'?)
 
-    Literal = IntegerLiteral 
-            | DoubleLiteral 
-            | StringLiteral 
-            | BooleanLiteral
-    IntegerLiteral = #'-?[0-9]+'
-    DoubleLiteral = #'-?[0-9]+\\.[0-9]+'
-    StringLiteral = #'\"(?:[^\\\"]|\\.)*\"'
-    BooleanLiteral = 'true' | 'false'
-
-    Operator = ArithmeticOperator | ComparisonOperator | LogicOperator
-    ArithmeticOperator = Plus | Minus | Star | Slash | Modulo
-    Plus = '+'
-    Minus = '-'
-    Star = '*'
-    Slash = '/'
-    Modulo = '%'
-    ComparisonOperator = Equals | Smaller | Greater | Seq | Geq | Uneq
-    Equals = '=='
-    Smaller = '<'
-    Greater = '>'
-    Seq = '<=' 
-    Geq = '>='
-    Uneq = '!='
-    LogicOperator = LogicAnd | LogicOr
-    LogicAnd = '&&'
-    LogicOr = '||'
-    LogicNot = '!'
-
 
     Expression = LogicalExpression
 
     LogicalExpression = ComparisonExpression (LogicOperator ComparisonExpression)*
-    
     ComparisonExpression = ArithmeticExpression (ComparisonOperator ArithmeticExpression)?
-    
     ArithmeticExpression = Term ((Plus | Minus) Term)*
     Term = Factor ((Star | Slash | Modulo) Factor)*
     Factor = LogicNot? (Literal | '(' Expression ')' | Identifier | MethodCall)
 
 
-    Instruction = VariableDeclaration 
+    Instruction = VariableDeclaration
                 | VariableAssignment
                 | IfElseBlock
                 | WhileBlock
@@ -84,11 +55,53 @@
     IfElseBlock = IfBlock ElseBlock?
     IfBlock = 'if' '(' Expression ')' Instruction
     ElseBlock = 'else' Instruction
-    
+
     WhileBlock = 'while' '(' Expression ')' Instruction
-                
+
+
     ConsoleWrite = 'Console.WriteLine' '(' Expression ')' ';'
-                
+
+
+    Literal = IntegerLiteral
+            | DoubleLiteral
+            | StringLiteral
+            | BooleanLiteral
+    IntegerLiteral = #'-?[0-9]+'
+    DoubleLiteral = #'-?[0-9]+\\.[0-9]+'
+    StringLiteral = #'\"(?:[^\\\"]|\\.)*\"'
+    BooleanLiteral = 'true' | 'false'
+
+    Operator = ArithmeticOperator
+             | ComparisonOperator
+             | LogicOperator
+    ArithmeticOperator = Plus
+                       | Minus
+                       | Star
+                       | Slash
+                       | Modulo
+    Plus = '+'
+    Minus = '-'
+    Star = '*'
+    Slash = '/'
+    Modulo = '%'
+    ComparisonOperator = Equals
+                       | Smaller
+                       | Greater
+                       | Seq
+                       | Geq
+                       | Uneq
+    Equals = '=='
+    Smaller = '<'
+    Greater = '>'
+    Seq = '<='
+    Geq = '>='
+    Uneq = '!='
+    LogicOperator = LogicAnd | LogicOr
+    LogicAnd = '&&'
+    LogicOr = '||'
+    LogicNot = '!'
+
+
     Comment = SingleLineComment | MultiLineComment
     SingleLineComment = #'//.*'
     MultiLineComment = '/*' #'[^*]*\\*+(?:[^/*][^*]*\\*+)*/'"
