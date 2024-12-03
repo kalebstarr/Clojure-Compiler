@@ -42,10 +42,8 @@
       :error (do (println message) (System/exit 1))
       :help (println message)
       :success (let [file-content (read-file file)
-                     parsed (parser/csharp-grammar file-content)]
-                 (if (insta/failure? (parser/csharp-grammar file-content))
-                   (parser/custom-print-failure (insta/get-failure parsed))
-                   (println parsed)))
+                     parsed (parser/parse-content file-content)] 
+                 (println parsed))
       :debug (do
                (println message)
                (parser/parser-debug (read-file file))))))

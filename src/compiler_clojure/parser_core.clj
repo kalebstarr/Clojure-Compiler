@@ -148,3 +148,9 @@
     (doseq [r all-reasons]
       (print r))
     (println)))
+
+(defn parse-content [file-content]
+  (let [parsed (csharp-grammar file-content)]
+    (if (insta/failure? (csharp-grammar file-content))
+      (custom-print-failure (insta/get-failure parsed))
+      parsed)))
