@@ -3,20 +3,18 @@
 
 (def csharp-grammar
   (insta/parser
-   "S = Program
+   "Program = Using* Namespace
 
-    Program = Using* Namespace
+    Using = 'using' Identifier <Semicolon>
 
-    Using = 'using' Identifier ';'
+    Namespace = 'namespace' Identifier <LeftBracket> ClassDeclaration <RightBracket>
 
-    Namespace = 'namespace' Identifier '{' ClassDeclaration '}'
-
-    ClassDeclaration = 'class' Identifier '{' MethodDeclaration+ '}'
+    ClassDeclaration = 'class' Identifier <LeftBracket> MethodDeclaration+ <RightBracket>
 
     MethodDeclaration = GenericMethodDeclaration | VoidMethodDeclaration
-    GenericMethodDeclaration = 'static' Type Identifier '(' ParameterList? ')' MethodBody
-    VoidMethodDeclaration = 'static' 'void' Identifier '(' ParameterList? ')' MethodBody
-    MethodBody = '{' (Instruction)* '}'
+    GenericMethodDeclaration = 'static' Type Identifier <LeftParen> ParameterList? <RightParen> MethodBody
+    VoidMethodDeclaration = 'static' 'void' Identifier <LeftParen> ParameterList? <RightParen> MethodBody
+    MethodBody = <LeftBracket> (Instruction)* <RightBracket>
     ParameterList = Parameter (',' Parameter)*
     Parameter = Type Identifier
 
@@ -30,8 +28,8 @@
     LogicalExpression = ComparisonExpression (LogicOperator ComparisonExpression)*
     ComparisonExpression = ArithmeticExpression (ComparisonOperator ArithmeticExpression)?
     ArithmeticExpression = Term ((Plus | Minus) Term)*
-    Term = Factor ((Star | Slash | Modulo) Factor)*
-    Factor = LogicNot? (Literal | '(' Expression ')' | Identifier | MethodCall)
+    <Term> = Factor ((Star | Slash | Modulo) Factor)*
+    <Factor> = LogicNot? (Literal | <LeftParen> Expression <RightParen> | Identifier | MethodCall)
 
 
     Instruction = VariableDeclaration
@@ -42,27 +40,27 @@
                 | InstructionReturn
                 | ConsoleWrite
                 | <Comment>
-    InstructionBlock = '{' Instruction* '}'
-    InstructionReturn = 'return' Expression ';'
+    InstructionBlock = <LeftBracket> Instruction* <RightBracket>
+    InstructionReturn = 'return' Expression <Semicolon>
 
-    VariableDeclaration = Type Identifier '=' Expression ';'
-    VariableAssignment = Identifier '=' Expression ';'
+    VariableDeclaration = Type Identifier '=' Expression <Semicolon>
+    VariableAssignment = Identifier '=' Expression <Semicolon>
 
-    MethodCall = Identifier '(' Arguments? ')'
+    MethodCall = Identifier <LeftParen> Arguments? <RightParen>
     Arguments = Expression (',' Expression)*
 
 
     IfElseBlock = IfBlock ElseBlock?
-    IfBlock = 'if' '(' Expression ')' Instruction
+    IfBlock = 'if' <LeftParen> Expression <RightParen> Instruction
     ElseBlock = 'else' Instruction
 
-    WhileBlock = 'while' '(' Expression ')' Instruction
+    WhileBlock = 'while' <LeftParen> Expression <RightParen> Instruction
 
 
-    ConsoleWrite = 'Console.WriteLine' '(' Expression ')' ';'
+    ConsoleWrite = 'Console.WriteLine' <LeftParen> Expression <RightParen> <Semicolon>
 
 
-    Literal = IntegerLiteral
+    <Literal> = IntegerLiteral
             | DoubleLiteral
             | StringLiteral
             | BooleanLiteral
@@ -104,8 +102,17 @@
 
     Comment = SingleLineComment | MultiLineComment
     SingleLineComment = #'//.*'
-    MultiLineComment = '/*' #'[^*]*\\*+(?:[^/*][^*]*\\*+)*/'"
-   :auto-whitespace :standard))
+    MultiLineComment = '/*' #'[^*]*\\*+(?:[^/*][^*]*\\*+)*/'
+
+
+    LeftParen = '('
+    RightParen = ')'
+    LeftBracket = '{'
+    RightBracket = '}'
+    Semicolon = ';'"
+   :auto-whitespace :standard
+   :input-format :ebnf
+   :output-format :hiccup))
 
 (defn parser-debug [file-content]
   (if (empty? file-content)
