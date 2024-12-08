@@ -1,5 +1,6 @@
 (ns compiler-clojure.parser-core
-  (:require [instaparse.core :as insta]))
+  (:require 
+   [instaparse.core :as insta]))
 
 (def csharp-grammar
   (insta/parser
@@ -25,9 +26,9 @@
 
     Expression = LogicalExpression
 
-    LogicalExpression = ComparisonExpression (LogicOperator ComparisonExpression)*
-    ComparisonExpression = ArithmeticExpression (ComparisonOperator ArithmeticExpression)?
-    ArithmeticExpression = Term ((Plus | Minus) Term)*
+    <LogicalExpression> = ComparisonExpression (LogicOperator ComparisonExpression)*
+    <ComparisonExpression> = ArithmeticExpression (ComparisonOperator ArithmeticExpression)?
+    <ArithmeticExpression> = Term ((Plus | Minus) Term)*
     <Term> = Factor ((Star | Slash | Modulo) Factor)*
     <Factor> = LogicNot? (Literal | <LeftParen> Expression <RightParen> | Identifier | MethodCall)
 
@@ -40,6 +41,7 @@
                 | InstructionReturn
                 | ConsoleWrite
                 | <Comment>
+                | MethodCall <Semicolon>
     InstructionBlock = <LeftBracket> Instruction* <RightBracket>
     InstructionReturn = 'return' Expression <Semicolon>
 
