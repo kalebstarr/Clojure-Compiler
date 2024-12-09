@@ -159,7 +159,9 @@
     (println)))
 
 (defn parse-content [file-content]
-  (let [parsed (csharp-grammar file-content)]
+  (let [parsed (insta/add-line-and-column-info-to-metadata
+                file-content
+                (csharp-grammar file-content))]
     (if (insta/failure? (csharp-grammar file-content))
       (custom-print-failure (insta/get-failure parsed))
       parsed)))

@@ -42,7 +42,49 @@
    {:IntegerLiteral #(vec (concat [:IntegerLiteral] [(Integer/parseInt %)]))
     :DoubleLiteral #(vec (concat [:DoubleLiteral] [(Double/parseDouble %)]))
     :StringLiteral #(vec (concat [:StringLiteral] [str %]))
-    :BooleanLiteral #(vec (concat [:BooleanLiteral] [(Boolean/parseBoolean %)]))} parsed))
+    :BooleanLiteral #(vec (concat [:BooleanLiteral] [(Boolean/parseBoolean %)]))}
+   parsed))
+
+(defn extract-info [node] 
+  (if (sequential? node)
+    (case (first node)
+      :VariableDeclaration
+      (concat [{:type :VariableDeclaration
+                :values (rest node)}]
+              (mapcat extract-info (rest node)))
+
+      :VariableAssignment
+      (concat [{:type :VariableAssignment
+                :values (rest node)}]
+              (mapcat extract-info (rest node)))
+
+      :InstructionReturn
+      (concat [{:type :InstructionReturn
+                :values (rest node)}]
+              (mapcat extract-info (rest node)))
+
+      :IfBlock
+      (concat [{:type :IfBlock
+                :values (rest node)}]
+              (mapcat extract-info (rest node)))
+
+      :WhileBlock
+      (concat [{:type :WhileBlock
+                :values (rest node)}]
+              (mapcat extract-info (rest node)))
+
+      :ConsoleWrite
+      (concat [{:type :ConsoleWrite
+                :values (rest node)}]
+              (mapcat extract-info (rest node)))
+
+      :MethodCall
+      (concat [{:type :MethodCall
+                :values (rest node)}]
+              (mapcat extract-info (rest node)))
+
+      (mapcat extract-info node))
+    []))
 
 (defn -main [& args]
   (let [{:keys [status message file]} (parse-args args)]
@@ -52,7 +94,7 @@
       :success (let [file-content (read-file file)
                      parsed (parser/parse-content file-content)]
                  (println (rest parsed))
-                 (transform-parsed parsed))
+                 (extract-info (transform-parsed parsed)))
       :debug (do
                (println message)
                (parser/parser-debug (read-file file))))))
