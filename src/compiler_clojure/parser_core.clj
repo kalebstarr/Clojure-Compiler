@@ -74,29 +74,29 @@
     Operator = ArithmeticOperator
              | ComparisonOperator
              | LogicOperator
-    ArithmeticOperator = Plus
-                       | Minus
-                       | Star
-                       | Slash
-                       | Modulo
+    <ArithmeticOperator> = Plus
+                         | Minus
+                         | Star
+                         | Slash
+                         | Modulo
     Plus = '+'
     Minus = '-'
     Star = '*'
     Slash = '/'
     Modulo = '%'
-    ComparisonOperator = Equals
-                       | Smaller
-                       | Greater
-                       | Seq
-                       | Geq
-                       | Uneq
+    <ComparisonOperator> = Equals
+                         | Smaller
+                         | Greater
+                         | Seq
+                         | Geq
+                         | Uneq
     Equals = '=='
     Smaller = '<'
     Greater = '>'
     Seq = '<='
     Geq = '>='
     Uneq = '!='
-    LogicOperator = LogicAnd | LogicOr
+    <LogicOperator> = LogicAnd | LogicOr
     LogicAnd = '&&'
     LogicOr = '||'
     LogicNot = '!'
