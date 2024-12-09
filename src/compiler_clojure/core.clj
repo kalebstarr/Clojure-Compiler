@@ -41,16 +41,36 @@
   (insta/transform
    {:IntegerLiteral #(vec (concat [:IntegerLiteral] [(Integer/parseInt %)]))
     :DoubleLiteral #(vec (concat [:DoubleLiteral] [(Double/parseDouble %)]))
-    :StringLiteral #(vec (concat [:StringLiteral] [str %]))
+    :StringLiteral #(vec (concat [:StringLiteral] [(str %)]))
     :BooleanLiteral #(vec (concat [:BooleanLiteral] [(Boolean/parseBoolean %)]))}
    parsed))
+
+(defn extract-type [node]
+  (if (sequential? node)
+    (case (first node)
+      :Type
+      (rest node) 
+
+      (mapcat extract-type node))
+    []))
+
+(defn extract-expression [node]
+  (if (sequential? node)
+    (case (first node)
+      :Expression
+      (rest node)
+  
+      (mapcat extract-expression node))
+    []))
 
 (defn extract-info [node] 
   (if (sequential? node)
     (case (first node)
       :VariableDeclaration
       (concat [{:type :VariableDeclaration
-                :values (rest node)}]
+                :values (rest node)
+                :vartype (extract-type node)
+                :expression (extract-expression node)}]
               (mapcat extract-info (rest node)))
 
       :VariableAssignment
