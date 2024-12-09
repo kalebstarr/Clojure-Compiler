@@ -1,8 +1,9 @@
 (ns compiler-clojure.core
-  (:require [compiler-clojure.parser-core :as parser]
-            [clojure.tools.cli :refer [parse-opts]]
-            [clojure.string :as str]
-            [instaparse.core :as insta])
+  (:require
+   [clojure.string :as str]
+   [clojure.tools.cli :refer [parse-opts]]
+   [compiler-clojure.parser-core :as parser]
+   [instaparse.core :as insta])
   (:gen-class))
 
 (def cli-options
@@ -36,14 +37,22 @@
     (catch java.io.FileNotFoundException e
       (throw (Exception. (str "File was not found: " e))))))
 
+(defn transform-parsed [parsed]
+  (insta/transform
+   {:IntegerLiteral #(vec (concat [:IntegerLiteral] [(Integer/parseInt %)]))
+    :DoubleLiteral #(vec (concat [:DoubleLiteral] [(Double/parseDouble %)]))
+    :StringLiteral #(vec (concat [:StringLiteral] [str %]))
+    :BooleanLiteral #(vec (concat [:BooleanLiteral] [(Boolean/parseBoolean %)]))} parsed))
+
 (defn -main [& args]
   (let [{:keys [status message file]} (parse-args args)]
     (case status
       :error (do (println message) (System/exit 1))
       :help (println message)
       :success (let [file-content (read-file file)
-                     parsed (parser/parse-content file-content)] 
-                 (println parsed))
+                     parsed (parser/parse-content file-content)]
+                 (println (rest parsed))
+                 (transform-parsed parsed))
       :debug (do
                (println message)
                (parser/parser-debug (read-file file))))))
