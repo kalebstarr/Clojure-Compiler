@@ -39,10 +39,10 @@
 
 (defn transform-parsed [parsed]
   (insta/transform
-   {:IntegerLiteral #(vec (concat [:IntegerLiteral] [(Integer/parseInt %)]))
-    :DoubleLiteral #(vec (concat [:DoubleLiteral] [(Double/parseDouble %)]))
-    :StringLiteral #(vec (concat [:StringLiteral] [(str %)]))
-    :BooleanLiteral #(vec (concat [:BooleanLiteral] [(Boolean/parseBoolean %)]))}
+   {:IntegerLiteral #(vec (concat [:int] [(Integer/parseInt %)]))
+    :DoubleLiteral #(vec (concat [:double] [(Double/parseDouble %)]))
+    :StringLiteral #(vec (concat [:string] [(str %)]))
+    :BooleanLiteral #(vec (concat [:bool] [(Boolean/parseBoolean %)]))}
    parsed))
 
 (defn extract-type [node]
@@ -58,8 +58,9 @@
   (if (sequential? node)
     (case (first node)
       :Expression
-      (rest node)
-  
+      (concat (filter #(not= (first %) :Expression) (rest node))
+              (mapcat extract-expression (rest node)))
+
       (mapcat extract-expression node))
     []))
 
@@ -114,7 +115,7 @@
       :success (let [file-content (read-file file)
                      parsed (parser/parse-content file-content)]
                  (println (rest parsed))
-                 (extract-info (transform-parsed parsed)))
+                 (filter #(= (:type %) :VariableDeclaration) (extract-info (transform-parsed parsed))))
       :debug (do
                (println message)
                (parser/parser-debug (read-file file))))))
