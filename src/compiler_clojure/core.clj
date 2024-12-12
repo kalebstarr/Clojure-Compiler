@@ -3,7 +3,8 @@
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
    [compiler-clojure.parser-core :as parser]
-   [instaparse.core :as insta])
+   [instaparse.core :as insta]
+   [meander.epsilon :as m])
   (:gen-class))
 
 (def cli-options
@@ -63,12 +64,32 @@
       (mapcat extract-expression node))
     []))
 
+(defn evaluate-values [values]
+  (m/match values
+    ([:Type ?x] [:Identifier ?y] "=" & ?other)
+    (do (println "Value:" ?x ?y)
+        (conj [?x] ?y (evaluate-values ?other)))
+
+    ([:Expression & ?other])
+    (do (println "Expression:" ?other)
+        (evaluate-values ?other))
+
+    [?one & ?other]
+    (do (println "Other:" ?one)
+        (concat [?one] (evaluate-values ?other)))
+
+    [:Expression & ?other]
+    (do (println "Nested Expression:" ?other)
+        ?other)
+
+    _ (println "Nothing:" values)))
+
 (defn extract-info [node]
   (if (sequential? node)
     (case (first node)
       :VariableDeclaration
       (concat [{:type :VariableDeclaration
-                :values (rest node)
+                :values (evaluate-values (rest node))
                 :vartype (extract-type node)
                 :expression (extract-expression node)}]
               (mapcat extract-info (rest node)))
@@ -126,3 +147,5 @@
       :debug (do
                (println message)
                (parser/parser-debug (read-file file))))))
+
+(-main "-c" "resources/Sample.cs")
