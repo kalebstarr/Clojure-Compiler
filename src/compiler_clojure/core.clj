@@ -64,23 +64,25 @@
       (mapcat extract-expression node))
     []))
 
-(defn evaluate-values [values]
+(defn extract-variable [values]
   (m/match values
     ([:Type ?x] [:Identifier ?y] "=" & ?other)
     (do (println "Value:" ?x ?y)
-        (conj [?x] ?y (evaluate-values ?other)))
+        {:vartype ?x,
+         :varname ?y,
+         :expression (extract-variable ?other)})
 
     ([:Expression & ?other])
     (do (println "Expression:" ?other)
-        (evaluate-values ?other))
-
-    [?one & ?other]
-    (do (println "Other:" ?one)
-        (concat [?one] (evaluate-values ?other)))
+        (extract-variable ?other))
 
     [:Expression & ?other]
     (do (println "Nested Expression:" ?other)
         ?other)
+
+    [?one & ?other]
+    (do (println "Other:" ?one)
+        (concat [?one] (extract-variable ?other)))
 
     _ (println "Nothing:" values)))
 
@@ -89,9 +91,7 @@
     (case (first node)
       :VariableDeclaration
       (concat [{:type :VariableDeclaration
-                :values (evaluate-values (rest node))
-                :vartype (extract-type node)
-                :expression (extract-expression node)}]
+                :variable (extract-variable (rest node))}]
               (mapcat extract-info (rest node)))
 
       :VariableAssignment

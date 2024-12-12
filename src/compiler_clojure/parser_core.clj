@@ -74,7 +74,7 @@
     Operator = ArithmeticOperator
              | ComparisonOperator
              | LogicOperator
-    <ArithmeticOperator> = Plus
+    ArithmeticOperator = Plus
                          | Minus
                          | Star
                          | Slash
@@ -84,7 +84,7 @@
     Star = '*'
     Slash = '/'
     Modulo = '%'
-    <ComparisonOperator> = Equals
+    ComparisonOperator = Equals
                          | Smaller
                          | Greater
                          | Seq
@@ -96,7 +96,7 @@
     Seq = '<='
     Geq = '>='
     Uneq = '!='
-    <LogicOperator> = LogicAnd | LogicOr
+    LogicOperator = LogicAnd | LogicOr
     LogicAnd = '&&'
     LogicOr = '||'
     LogicNot = '!'
