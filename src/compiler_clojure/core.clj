@@ -46,15 +46,6 @@
     :BooleanLiteral #(vector :bool (Boolean/parseBoolean %))}
    parsed))
 
-(defn extract-type [node]
-  (if (sequential? node)
-    (case (first node)
-      :Type
-      (rest node)
-
-      (mapcat extract-type node))
-    []))
-
 (defn extract-expression [node]
   (if (sequential? node)
     (case (first node)
@@ -72,14 +63,38 @@
          :varname ?id,
          :expression (extract-variable ?other)})
 
+    ([:Identifier ?id] "=" & ?other)
+    (do (println "VariableAssign:" ?id)
+        {:varname ?id,
+         :expression (extract-variable ?other)})
+
+    ("if" ?exp _)
+    (do (println "If:")
+        {:vartype "bool",
+         :expression (extract-variable ?exp)})
+
+    ("while" ?exp _)
+    (do (println "While")
+        {:vartype "bool"
+         :expression (extract-variable ?exp)})
+
+    ;; Expr in :VarDec and :VarAssign
     ([:Expression & ?other])
     (do (println "Expression:" ?other)
         (extract-variable ?other))
 
-    ;; Doesn't seem to do anything
+    ;; Nested Expr in :VarDec and :VarAssign
+    ;; TODO: Add parenthesis to indicate priority
+    [[:Expression & ?nested-exp] & ?other]
+    (concat (extract-variable ?nested-exp) (extract-variable ?other))
+
+    ;; Expr in :IfBlock, :WhileBlock and :ConsoleWrite
     [:Expression & ?other]
     (do (println "Nested Expression:" ?other)
         ?other)
+
+    ("Console.WriteLine" ?exp)
+    (extract-variable ?exp)
 
     [?one & ?other]
     (do (println "Other:" ?one)
@@ -89,20 +104,23 @@
 
 (defn extract [k node]
   (case k
-    :VariableDeclaration (extract-variable node)))
+    :VariableDeclaration (extract-variable node)
+    :VariableAssignment (extract-variable node)
+    :IfBlock (extract-variable node)
+    :WhileBlock (extract-variable node)
+    :ConsoleWrite (extract-variable node)))
 
 (defn extract-info [node]
   (if (sequential? node)
     (case (first node)
       :VariableDeclaration
       (concat [{:type :VariableDeclaration
-                :variable (extract :VariableDeclaration (rest node))}]
+                :values (extract :VariableDeclaration (rest node))}]
               (mapcat extract-info (rest node)))
 
       :VariableAssignment
       (concat [{:type :VariableAssignment
-                :values (rest node)
-                :expression (extract-expression node)}]
+                :values (extract :VariableAssignment (rest node))}]
               (mapcat extract-info (rest node)))
 
       :InstructionReturn
@@ -113,22 +131,17 @@
 
       :IfBlock
       (concat [{:type :IfBlock
-                :values (rest node)
-                :vartype '("bool")
-                :expression (extract-expression node)}]
+                :values (extract :IfBlock (rest node))}]
               (mapcat extract-info (rest node)))
 
       :WhileBlock
       (concat [{:type :WhileBlock
-                :values (rest node)
-                :vartype '("bool")
-                :expression (extract-expression node)}]
+                :values (extract :WhileBlock (rest node))}]
               (mapcat extract-info (rest node)))
 
       :ConsoleWrite
       (concat [{:type :ConsoleWrite
-                :values (rest node)
-                :expression (extract-expression node)}]
+                :values (extract :ConsoleWrite (rest node))}]
               (mapcat extract-info (rest node)))
 
       :MethodCall
@@ -148,8 +161,7 @@
       :success (let [file-content (read-file file)
                      parsed (parser/parse-content file-content)]
                  (println (rest parsed))
-                 (filter #(or (= (:type %) :VariableAssignment)
-                              (= (:type %) :VariableDeclaration)) (extract-info (transform-parsed parsed))))
+                 (extract-info (transform-parsed parsed)))
       :debug (do
                (println message)
                (parser/parser-debug (read-file file))))))
