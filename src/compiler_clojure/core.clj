@@ -64,18 +64,19 @@
       (mapcat extract-expression node))
     []))
 
-(defn extract-variable [values]
-  (m/match values
-    ([:Type ?x] [:Identifier ?y] "=" & ?other)
-    (do (println "Value:" ?x ?y)
-        {:vartype ?x,
-         :varname ?y,
+(defn extract-variable [node]
+  (m/match node
+    ([:Type ?t] [:Identifier ?id] "=" & ?other)
+    (do (println "VariableDec:" ?t ?id)
+        {:vartype ?t,
+         :varname ?id,
          :expression (extract-variable ?other)})
 
     ([:Expression & ?other])
     (do (println "Expression:" ?other)
         (extract-variable ?other))
 
+    ;; Doesn't seem to do anything
     [:Expression & ?other]
     (do (println "Nested Expression:" ?other)
         ?other)
@@ -84,14 +85,18 @@
     (do (println "Other:" ?one)
         (concat [?one] (extract-variable ?other)))
 
-    _ (println "Nothing:" values)))
+    _ (println "Nothing:" node)))
+
+(defn extract [k node]
+  (case k
+    :VariableDeclaration (extract-variable node)))
 
 (defn extract-info [node]
   (if (sequential? node)
     (case (first node)
       :VariableDeclaration
       (concat [{:type :VariableDeclaration
-                :variable (extract-variable (rest node))}]
+                :variable (extract :VariableDeclaration (rest node))}]
               (mapcat extract-info (rest node)))
 
       :VariableAssignment
@@ -143,7 +148,8 @@
       :success (let [file-content (read-file file)
                      parsed (parser/parse-content file-content)]
                  (println (rest parsed))
-                 (filter #(= (:type %) :VariableDeclaration) (extract-info (transform-parsed parsed))))
+                 (filter #(or (= (:type %) :VariableAssignment)
+                              (= (:type %) :VariableDeclaration)) (extract-info (transform-parsed parsed))))
       :debug (do
                (println message)
                (parser/parser-debug (read-file file))))))
