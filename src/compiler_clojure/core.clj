@@ -39,17 +39,17 @@
 
 (defn transform-parsed [parsed]
   (insta/transform
-   {:IntegerLiteral #(vec (concat [:int] [(Integer/parseInt %)]))
-    :DoubleLiteral #(vec (concat [:double] [(Double/parseDouble %)]))
-    :StringLiteral #(vec (concat [:string] [(str %)]))
-    :BooleanLiteral #(vec (concat [:bool] [(Boolean/parseBoolean %)]))}
+   {:IntegerLiteral #(vector :int (Integer/parseInt %))
+    :DoubleLiteral #(vector :double (Double/parseDouble %))
+    :StringLiteral #(vector :string %)
+    :BooleanLiteral #(vector :bool (Boolean/parseBoolean %))}
    parsed))
 
 (defn extract-type [node]
   (if (sequential? node)
     (case (first node)
       :Type
-      (rest node) 
+      (rest node)
 
       (mapcat extract-type node))
     []))
@@ -58,13 +58,12 @@
   (if (sequential? node)
     (case (first node)
       :Expression
-      (concat (filter #(not= (first %) :Expression) (rest node))
-              (mapcat extract-expression (rest node)))
+      (rest node)
 
       (mapcat extract-expression node))
     []))
 
-(defn extract-info [node] 
+(defn extract-info [node]
   (if (sequential? node)
     (case (first node)
       :VariableDeclaration
@@ -76,32 +75,40 @@
 
       :VariableAssignment
       (concat [{:type :VariableAssignment
-                :values (rest node)}]
+                :values (rest node)
+                :expression (extract-expression node)}]
               (mapcat extract-info (rest node)))
 
       :InstructionReturn
       (concat [{:type :InstructionReturn
-                :values (rest node)}]
+                :values (rest node)
+                :expression (extract-expression node)}]
               (mapcat extract-info (rest node)))
 
       :IfBlock
       (concat [{:type :IfBlock
-                :values (rest node)}]
+                :values (rest node)
+                :vartype '("bool")
+                :expression (extract-expression node)}]
               (mapcat extract-info (rest node)))
 
       :WhileBlock
       (concat [{:type :WhileBlock
-                :values (rest node)}]
+                :values (rest node)
+                :vartype '("bool")
+                :expression (extract-expression node)}]
               (mapcat extract-info (rest node)))
 
       :ConsoleWrite
       (concat [{:type :ConsoleWrite
-                :values (rest node)}]
+                :values (rest node)
+                :expression (extract-expression node)}]
               (mapcat extract-info (rest node)))
 
       :MethodCall
       (concat [{:type :MethodCall
-                :values (rest node)}]
+                :values (rest node)
+                :expression (extract-expression node)}]
               (mapcat extract-info (rest node)))
 
       (mapcat extract-info node))

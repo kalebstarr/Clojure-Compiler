@@ -26,11 +26,11 @@
 
     Expression = LogicalExpression
 
-    <LogicalExpression> = ComparisonExpression (LogicOperator ComparisonExpression)*
-    <ComparisonExpression> = ArithmeticExpression (ComparisonOperator ArithmeticExpression)?
-    <ArithmeticExpression> = Term ((Plus | Minus) Term)*
-    <Term> = Factor ((Star | Slash | Modulo) Factor)*
-    <Factor> = LogicNot? (Literal | <LeftParen> Expression <RightParen> | Identifier | MethodCall)
+    LogicalExpression = ComparisonExpression (LogicOperator ComparisonExpression)*
+    ComparisonExpression = ArithmeticExpression (ComparisonOperator ArithmeticExpression)*
+    ArithmeticExpression = Term ((Plus | Minus) Term)*
+    Term = Factor ((Star | Slash | Modulo) Factor)*
+    Factor = LogicNot? (Literal | <LeftParen> Expression <RightParen> | Identifier | MethodCall)
 
 
     Instruction = VariableDeclaration
