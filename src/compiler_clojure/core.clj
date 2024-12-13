@@ -58,30 +58,28 @@
 (defn extract-variable [node]
   (m/match node
     ([:Type ?t] [:Identifier ?id] "=" & ?other)
-    (do (println "VariableDec:" ?t ?id)
-        {:vartype ?t,
-         :varname ?id,
-         :expression (extract-variable ?other)})
+    {:vartype ?t,
+     :varname ?id,
+     :expression (extract-variable ?other)}
 
     ([:Identifier ?id] "=" & ?other)
-    (do (println "VariableAssign:" ?id)
-        {:varname ?id,
-         :expression (extract-variable ?other)})
+    {:varname ?id,
+     :expression (extract-variable ?other)}
 
     ("if" ?exp _)
-    (do (println "If:")
-        {:vartype "bool",
-         :expression (extract-variable ?exp)})
+    {:vartype "bool",
+     :expression (extract-variable ?exp)}
 
     ("while" ?exp _)
-    (do (println "While")
-        {:vartype "bool"
-         :expression (extract-variable ?exp)})
+    {:vartype "bool"
+     :expression (extract-variable ?exp)}
+
+    ("return" ?exp)
+    {:expression (extract-variable ?exp)}
 
     ;; Expr in :VarDec and :VarAssign
     ([:Expression & ?other])
-    (do (println "Expression:" ?other)
-        (extract-variable ?other))
+    (extract-variable ?other)
 
     ;; Nested Expr in :VarDec and :VarAssign
     ;; TODO: Add parenthesis to indicate priority
@@ -90,22 +88,21 @@
 
     ;; Expr in :IfBlock, :WhileBlock and :ConsoleWrite
     [:Expression & ?other]
-    (do (println "Nested Expression:" ?other)
-        ?other)
+    ?other
 
     ("Console.WriteLine" ?exp)
     (extract-variable ?exp)
 
     [?one & ?other]
-    (do (println "Other:" ?one)
-        (concat [?one] (extract-variable ?other)))
+    (concat [?one] (extract-variable ?other))
 
-    _ (println "Nothing:" node)))
+    _ node))
 
 (defn extract [k node]
   (case k
     :VariableDeclaration (extract-variable node)
     :VariableAssignment (extract-variable node)
+    :InstructionReturn (extract-variable node)
     :IfBlock (extract-variable node)
     :WhileBlock (extract-variable node)
     :ConsoleWrite (extract-variable node)))
@@ -125,8 +122,7 @@
 
       :InstructionReturn
       (concat [{:type :InstructionReturn
-                :values (rest node)
-                :expression (extract-expression node)}]
+                :values (extract :InstructionReturn (rest node))}]
               (mapcat extract-info (rest node)))
 
       :IfBlock
@@ -159,11 +155,8 @@
       :error (do (println message) (System/exit 1))
       :help (println message)
       :success (let [file-content (read-file file)
-                     parsed (parser/parse-content file-content)]
-                 (println (rest parsed))
-                 (extract-info (transform-parsed parsed)))
+                     parsed (parser/parse-content file-content)] 
+                 (filter #(not= (:type %) :MethodCall) (extract-info (transform-parsed parsed))))
       :debug (do
                (println message)
                (parser/parser-debug (read-file file))))))
-
-(-main "-c" "resources/Sample.cs")
