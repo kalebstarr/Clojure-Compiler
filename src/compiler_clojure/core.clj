@@ -75,7 +75,14 @@
      :expression (extract-variable ?exp)}
 
     ("return" ?exp)
-    {:expression (extract-variable ?exp)}
+    {:expression (extract-variable ?exp)} 
+
+    ([:Identifier ?id] ?other)
+    {:name ?id,
+     :arguments (extract-variable ?other)}
+    
+    [:Arguments & ?other]
+    (extract-variable ?other)
 
     ;; Expr in :VarDec and :VarAssign
     ([:Expression & ?other])
@@ -91,10 +98,14 @@
     ?other
 
     ("Console.WriteLine" ?exp)
-    (extract-variable ?exp)
+    (extract-variable ?exp) 
 
     [?one & ?other]
     (concat [?one] (extract-variable ?other))
+
+    ;; :MethodCall without any arguments
+    ([:Identifier ?id])
+    {:name ?id}
 
     _ node))
 
@@ -105,7 +116,8 @@
     :InstructionReturn (extract-variable node)
     :IfBlock (extract-variable node)
     :WhileBlock (extract-variable node)
-    :ConsoleWrite (extract-variable node)))
+    :ConsoleWrite (extract-variable node)
+    :MethodCall (extract-variable node)))
 
 (defn extract-info [node]
   (if (sequential? node)
@@ -142,8 +154,7 @@
 
       :MethodCall
       (concat [{:type :MethodCall
-                :values (rest node)
-                :expression (extract-expression node)}]
+                :values (extract :MethodCall (rest node))}]
               (mapcat extract-info (rest node)))
 
       (mapcat extract-info node))
@@ -155,8 +166,8 @@
       :error (do (println message) (System/exit 1))
       :help (println message)
       :success (let [file-content (read-file file)
-                     parsed (parser/parse-content file-content)] 
-                 (filter #(not= (:type %) :MethodCall) (extract-info (transform-parsed parsed))))
+                     parsed (parser/parse-content file-content)]
+                 (extract-info (transform-parsed parsed)))
       :debug (do
                (println message)
                (parser/parser-debug (read-file file))))))
