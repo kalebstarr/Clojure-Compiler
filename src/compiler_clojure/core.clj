@@ -4,7 +4,7 @@
    [clojure.tools.cli :refer [parse-opts]]
    [compiler-clojure.parser-core :as parser]
    [instaparse.core :as insta]
-   [meander.epsilon :as m])
+   [compiler-clojure.extract-core :as extractor])
   (:gen-class))
 
 (def cli-options
@@ -46,100 +46,6 @@
     :BooleanLiteral #(vector :bool (Boolean/parseBoolean %))}
    parsed))
 
-(defn extract [node]
-  (m/match node
-    ([:Type ?t] [:Identifier ?id] "=" & ?other)
-    {:vartype ?t,
-     :varname ?id,
-     :expression (extract ?other)}
-
-    ([:Identifier ?id] "=" & ?other)
-    {:varname ?id,
-     :expression (extract ?other)}
-
-    ("if" ?exp _)
-    {:vartype "bool",
-     :expression (extract ?exp)}
-
-    ("while" ?exp _)
-    {:vartype "bool"
-     :expression (extract ?exp)}
-
-    ("return" ?exp)
-    {:expression (extract ?exp)}
-
-    ([:Identifier ?id] ?other)
-    {:name ?id,
-     :arguments (extract ?other)}
-
-    [:Arguments & ?other]
-    (extract ?other)
-
-    ;; Expr in :VarDec and :VarAssign
-    ([:Expression & ?other])
-    (extract ?other)
-
-    ;; Nested Expr in :VarDec and :VarAssign
-    [[:Expression & ?nested-exp] & ?other]
-    (concat (extract ?nested-exp) (extract ?other))
-
-    ;; Expr in :IfBlock, :WhileBlock and :ConsoleWrite
-    [:Expression & ?other]
-    ?other
-
-    ("Console.WriteLine" ?exp)
-    (extract ?exp)
-
-    [?one & ?other]
-    (concat [?one] (extract ?other))
-
-    ;; :MethodCall without any arguments
-    ([:Identifier ?id])
-    {:name ?id}
-
-    _ node))
-
-(defn extract-info [node]
-  (if (sequential? node)
-    (case (first node)
-      :VariableDeclaration
-      (concat [{:type :VariableDeclaration
-                :values (extract (rest node))}]
-              (mapcat extract-info (rest node)))
-
-      :VariableAssignment
-      (concat [{:type :VariableAssignment
-                :values (extract (rest node))}]
-              (mapcat extract-info (rest node)))
-
-      :InstructionReturn
-      (concat [{:type :InstructionReturn
-                :values (extract (rest node))}]
-              (mapcat extract-info (rest node)))
-
-      :IfBlock
-      (concat [{:type :IfBlock
-                :values (extract (rest node))}]
-              (mapcat extract-info (rest node)))
-
-      :WhileBlock
-      (concat [{:type :WhileBlock
-                :values (extract (rest node))}]
-              (mapcat extract-info (rest node)))
-
-      :ConsoleWrite
-      (concat [{:type :ConsoleWrite
-                :values (extract (rest node))}]
-              (mapcat extract-info (rest node)))
-
-      :MethodCall
-      (concat [{:type :MethodCall
-                :values (extract (rest node))}]
-              (mapcat extract-info (rest node)))
-
-      (mapcat extract-info node))
-    []))
-
 (defn -main [& args]
   (let [{:keys [status message file]} (parse-args args)]
     (case status
@@ -147,7 +53,7 @@
       :help (println message)
       :success (let [file-content (read-file file)
                      parsed (parser/parse-content file-content)]
-                 (extract-info (transform-parsed parsed)))
+                 (extractor/extract-info (transform-parsed parsed)))
       :debug (do
                (println message)
                (parser/parser-debug (read-file file))))))
