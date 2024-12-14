@@ -46,14 +46,121 @@
     :BooleanLiteral #(vector :bool (Boolean/parseBoolean %))}
    parsed))
 
+;; Add variable stack as param
+(defn evaluate-var [expected expression]
+  (when (seq expression)
+    (let [token (first expression)
+          rest-expr (rest expression)
+          token-type (first token)]
+      (case expected
+        "int"
+        (case token-type
+          :int (evaluate-var expected rest-expr)
+          :Identifier (evaluate-var expected rest-expr)
+          :Plus (evaluate-var expected rest-expr)
+          :Minus (evaluate-var expected rest-expr)
+          :Star (evaluate-var expected rest-expr)
+          :Modulo (evaluate-var expected rest-expr)
+          :LeftParen (evaluate-var expected rest-expr)
+          :RightParen (evaluate-var expected rest-expr)
+          (println "Invalid token in int expression" token-type))
+
+        "double"
+        (case token-type
+          :int (evaluate-var expected rest-expr)
+          :double (evaluate-var expected rest-expr)
+          :Identifier (evaluate-var expected rest-expr)
+          :Plus (evaluate-var expected rest-expr)
+          :Minus (evaluate-var expected rest-expr)
+          :Star (evaluate-var expected rest-expr)
+          :Slash (evaluate-var expected rest-expr)
+          :Modulo (evaluate-var expected rest-expr)
+          :LeftParen (evaluate-var expected rest-expr)
+          :RightParen (evaluate-var expected rest-expr)
+          (println "Invalid token in double expression" token-type))
+
+        "bool"
+        (case token-type
+          :bool (evaluate-var expected rest-expr)
+          :LogicOperator (evaluate-var expected rest-expr)
+          :LeftParen (evaluate-var expected rest-expr)
+          :RightParen (evaluate-var expected rest-expr)
+          :Identifier (evaluate-var expected rest-expr)
+          :int (evaluate-var "arithmetic-in-bool" expression)
+          :double (evaluate-var "arithmetic-in-bool" expression)
+          (println "Invalid token in bool expression:" token-type))
+
+        "arithmetic-in-bool"
+        (let [next-token (first rest-expr)]
+          (case token-type
+            :int (if (and next-token (= (first next-token) :ComparisonOperator))
+                   (evaluate-var "comparison" rest-expr)
+                   (println "Expected a comparison operator after arithmetic expression"))
+            :double (if (and next-token (= (first next-token) :ComparisonOperator))
+                      (evaluate-var "comparison" rest-expr)
+                      (println "Expected a comparison operator after arithmetic expression"))
+            :Identifier (if (and next-token (= (first next-token) :ComparisonOperator))
+                          (evaluate-var "comparison" rest-expr)
+                          (println "Expected a comparison operator after identifier"))
+            (println "Invalid arithmetic expression in bool context:" token-type)))
+
+        "comparison"
+        (case token-type
+          :ComparisonOperator (evaluate-var "arithmetic" rest-expr)
+          (println "Expected a comparison operator, found:" token-type))
+
+        "arithmetic"
+        (case token-type
+          :int (evaluate-var "bool-next" rest-expr)
+          :double (evaluate-var "bool-next" rest-expr)
+          :Identifier (evaluate-var "bool-next" rest-expr)
+          (println "Invalid token after comparison operator:" token-type))
+
+        "bool-next"
+        (let [next-token (first rest-expr)]
+          (if (and next-token (= (first next-token) :LogicOperator))
+            (evaluate-var "bool" rest-expr)
+            (if next-token
+              (evaluate-var expected rest-expr)
+              nil)))
+        
+        "string"
+        (case token-type
+          :string (evaluate-var token-type rest-expr)
+          :Plus (evaluate-var token-type rest-expr)
+          (println "Invalid token in string expression:" token-type))
+
+        (println "Not handled yet:" expected)))))
+
+(defn evaluate [extract]
+  (let [expected (:vartype (:values extract))
+        expression (:expression (:values extract))
+        type (:type extract)]
+    (case type
+      ;; :IfBlock (do
+      ;;            (evaluate-var expected expression))
+      :VariableDeclaration (evaluate-var expected expression)
+      ;; :VariableAssignment (do
+      ;;                      (evaluate-var expected expression))
+      ;; :MethodCall (do
+      ;;              (evaluate-var expected expression))
+      ;; :InstructionReturn (do
+      ;;                     (evaluate-var expected expression))
+      (println "Unknown type" type))))
+
 (defn -main [& args]
   (let [{:keys [status message file]} (parse-args args)]
     (case status
       :error (do (println message) (System/exit 1))
       :help (println message)
-      :success (let [file-content (read-file file)
-                     parsed (parser/parse-content file-content)]
-                 (extractor/extract-info (transform-parsed parsed)))
+      :success (->> file
+                    (read-file)
+                    (parser/parse-content)
+                    (transform-parsed)
+                    (extractor/extract-info)
+                    (map evaluate))
       :debug (do
                (println message)
                (parser/parser-debug (read-file file))))))
+
+(-main "-c" "resources/Sample.cs")
