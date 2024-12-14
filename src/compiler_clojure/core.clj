@@ -52,7 +52,7 @@
     (println "Type Error: Line" start-line ": Column:" start-column)))
 
 ;; Add variable stack as param
-(defn evaluate-var [expected expression]
+(defn evaluate-var [expected expression var-stack]
   (when (seq expression)
     (let [token (first expression)
           rest-expr (rest expression)
@@ -61,98 +61,110 @@
       (case expected
         "int"
         (case token-type
-          :int (evaluate-var expected rest-expr)
-          :Identifier (evaluate-var expected rest-expr)
-          :Plus (evaluate-var expected rest-expr)
-          :Minus (evaluate-var expected rest-expr)
-          :Star (evaluate-var expected rest-expr)
-          :Modulo (evaluate-var expected rest-expr)
-          :LeftParen (evaluate-var expected rest-expr)
-          :RightParen (evaluate-var expected rest-expr)
+          :int (evaluate-var expected rest-expr var-stack)
+          :Identifier (evaluate-var expected rest-expr var-stack)
+          :Plus (evaluate-var expected rest-expr var-stack)
+          :Minus (evaluate-var expected rest-expr var-stack)
+          :Star (evaluate-var expected rest-expr var-stack)
+          :Modulo (evaluate-var expected rest-expr var-stack)
+          :LeftParen (evaluate-var expected rest-expr var-stack)
+          :RightParen (evaluate-var expected rest-expr var-stack)
           (type-print-failure token))
 
         "double"
         (case token-type
-          :int (evaluate-var expected rest-expr)
-          :double (evaluate-var expected rest-expr)
-          :Identifier (evaluate-var expected rest-expr)
-          :Plus (evaluate-var expected rest-expr)
-          :Minus (evaluate-var expected rest-expr)
-          :Star (evaluate-var expected rest-expr)
-          :Slash (evaluate-var expected rest-expr)
-          :Modulo (evaluate-var expected rest-expr)
-          :LeftParen (evaluate-var expected rest-expr)
-          :RightParen (evaluate-var expected rest-expr)
+          :int (evaluate-var expected rest-expr var-stack)
+          :double (evaluate-var expected rest-expr var-stack)
+          :Identifier (evaluate-var expected rest-expr var-stack)
+          :Plus (evaluate-var expected rest-expr var-stack)
+          :Minus (evaluate-var expected rest-expr var-stack)
+          :Star (evaluate-var expected rest-expr var-stack)
+          :Slash (evaluate-var expected rest-expr var-stack)
+          :Modulo (evaluate-var expected rest-expr var-stack)
+          :LeftParen (evaluate-var expected rest-expr var-stack)
+          :RightParen (evaluate-var expected rest-expr var-stack)
           (type-print-failure token))
 
         "bool"
         (case token-type
-          :bool (evaluate-var expected rest-expr)
-          :LogicOperator (evaluate-var expected rest-expr)
-          :LeftParen (evaluate-var expected rest-expr)
-          :RightParen (evaluate-var expected rest-expr)
-          :Identifier (evaluate-var expected rest-expr)
-          :int (evaluate-var "arithmetic-in-bool" expression)
-          :double (evaluate-var "arithmetic-in-bool" expression)
+          :bool (evaluate-var expected rest-expr var-stack)
+          :LogicOperator (evaluate-var expected rest-expr var-stack)
+          :LeftParen (evaluate-var expected rest-expr var-stack)
+          :RightParen (evaluate-var expected rest-expr var-stack)
+          :Identifier (evaluate-var expected rest-expr var-stack)
+          :int (evaluate-var "arithmetic-in-bool" expression var-stack)
+          :double (evaluate-var "arithmetic-in-bool" expression var-stack)
           (type-print-failure token))
 
         "arithmetic-in-bool"
         (let [next-token (first rest-expr)]
           (case token-type
             :int (if (and next-token (= (first next-token) :ComparisonOperator))
-                   (evaluate-var "comparison" rest-expr)
+                   (evaluate-var "comparison" rest-expr var-stack)
                    (println "Expected a comparison operator after arithmetic expression"))
             :double (if (and next-token (= (first next-token) :ComparisonOperator))
-                      (evaluate-var "comparison" rest-expr)
+                      (evaluate-var "comparison" rest-expr var-stack)
                       (println "Expected a comparison operator after arithmetic expression"))
             :Identifier (if (and next-token (= (first next-token) :ComparisonOperator))
-                          (evaluate-var "comparison" rest-expr)
+                          (evaluate-var "comparison" rest-expr var-stack)
                           (println "Expected a comparison operator after identifier"))
             (println "Invalid arithmetic expression in bool context:" token-type)))
 
         "comparison"
         (case token-type
-          :ComparisonOperator (evaluate-var "arithmetic" rest-expr)
+          :ComparisonOperator (evaluate-var "arithmetic" rest-expr var-stack)
           (type-print-failure token))
 
         "arithmetic"
         (case token-type
-          :int (evaluate-var "bool-next" rest-expr)
-          :double (evaluate-var "bool-next" rest-expr)
-          :Identifier (evaluate-var "bool-next" rest-expr)
+          :int (evaluate-var "bool-next" rest-expr var-stack)
+          :double (evaluate-var "bool-next" rest-expr var-stack)
+          :Identifier (evaluate-var "bool-next" rest-expr var-stack)
           (type-print-failure token))
 
         "bool-next"
         (let [next-token (first rest-expr)]
           (if (and next-token (= (first next-token) :LogicOperator))
-            (evaluate-var "bool" rest-expr)
+            (evaluate-var "bool" rest-expr var-stack)
             (if next-token
-              (evaluate-var expected rest-expr)
+              (evaluate-var expected rest-expr var-stack)
               nil)))
-        
+
         "string"
         (case token-type
-          :string (evaluate-var token-type rest-expr)
-          :Plus (evaluate-var token-type rest-expr)
+          :string (evaluate-var token-type rest-expr var-stack)
+          :Plus (evaluate-var token-type rest-expr var-stack)
           (type-print-failure token))
 
-        (println "Not handled yet:" expected)))))
+        (println "Not handled yet:" expected))))
+  var-stack)
 
-(defn evaluate [extract]
+(defn evaluate [extract var-stack]
   (let [expected (:vartype (:values extract))
+        varname (:varname (:values extract))
         expression (:expression (:values extract))
         type (:type extract)]
     (case type
+      :VariableDeclaration
+      (let [updated-var-stack (assoc var-stack varname expected)]
+        (evaluate-var expected expression updated-var-stack))
       ;; :IfBlock (do
       ;;            (evaluate-var expected expression))
-      :VariableDeclaration (evaluate-var expected expression)
       ;; :VariableAssignment (do
       ;;                      (evaluate-var expected expression))
       ;; :MethodCall (do
       ;;              (evaluate-var expected expression))
       ;; :InstructionReturn (do
       ;;                     (evaluate-var expected expression))
-      (println "Unknown type" type))))
+      (do (println "Unknown type" type)
+          var-stack))))
+
+(defn type-check [extracts]
+  (reduce
+   (fn [var-stack extract]
+     (evaluate extract var-stack))
+   {}
+   extracts))
 
 (defn -main [& args]
   (let [{:keys [status message file]} (parse-args args)]
@@ -164,7 +176,7 @@
                     (parser/parse-content)
                     (transform-parsed)
                     (extractor/extract-info)
-                    (map evaluate))
+                    (type-check))
       :debug (do
                (println message)
                (parser/parser-debug (read-file file))))))
