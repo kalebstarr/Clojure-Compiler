@@ -162,13 +162,16 @@
           (do (type-print-failure varname)
               var-stack)))
 
-      :IfBlock 
+      :IfBlock
       (let [expected (:vartype (:values extract))]
         (evaluate-var expected expression var-stack)
         var-stack)
-      
-      ;; :VariableAssignment (do
-      ;;                      (evaluate-var expected expression))
+
+      :WhileBlock
+      (let [expected (:vartype (:values extract))]
+        (evaluate-var expected expression var-stack)
+        var-stack)
+
       ;; :MethodCall (do
       ;;              (evaluate-var expected expression))
       ;; :InstructionReturn (do
