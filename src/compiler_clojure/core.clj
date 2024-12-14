@@ -46,12 +46,18 @@
     :BooleanLiteral #(vector :bool (Boolean/parseBoolean %))}
    parsed))
 
+;; Add more expressive print including expected and received types (?)
+(defn type-print-failure [token]
+  (let [{:instaparse.gll/keys [start-line start-column]} (meta token)]
+    (println "Type Error: Line" start-line ": Column:" start-column)))
+
 ;; Add variable stack as param
 (defn evaluate-var [expected expression]
   (when (seq expression)
     (let [token (first expression)
           rest-expr (rest expression)
-          token-type (first token)]
+          token-type (first token)
+          token-value (rest token)]
       (case expected
         "int"
         (case token-type
@@ -63,7 +69,7 @@
           :Modulo (evaluate-var expected rest-expr)
           :LeftParen (evaluate-var expected rest-expr)
           :RightParen (evaluate-var expected rest-expr)
-          (println "Invalid token in int expression" token-type))
+          (type-print-failure token))
 
         "double"
         (case token-type
@@ -77,7 +83,7 @@
           :Modulo (evaluate-var expected rest-expr)
           :LeftParen (evaluate-var expected rest-expr)
           :RightParen (evaluate-var expected rest-expr)
-          (println "Invalid token in double expression" token-type))
+          (type-print-failure token))
 
         "bool"
         (case token-type
@@ -88,7 +94,7 @@
           :Identifier (evaluate-var expected rest-expr)
           :int (evaluate-var "arithmetic-in-bool" expression)
           :double (evaluate-var "arithmetic-in-bool" expression)
-          (println "Invalid token in bool expression:" token-type))
+          (type-print-failure token))
 
         "arithmetic-in-bool"
         (let [next-token (first rest-expr)]
@@ -107,14 +113,14 @@
         "comparison"
         (case token-type
           :ComparisonOperator (evaluate-var "arithmetic" rest-expr)
-          (println "Expected a comparison operator, found:" token-type))
+          (type-print-failure token))
 
         "arithmetic"
         (case token-type
           :int (evaluate-var "bool-next" rest-expr)
           :double (evaluate-var "bool-next" rest-expr)
           :Identifier (evaluate-var "bool-next" rest-expr)
-          (println "Invalid token after comparison operator:" token-type))
+          (type-print-failure token))
 
         "bool-next"
         (let [next-token (first rest-expr)]
@@ -128,7 +134,7 @@
         (case token-type
           :string (evaluate-var token-type rest-expr)
           :Plus (evaluate-var token-type rest-expr)
-          (println "Invalid token in string expression:" token-type))
+          (type-print-failure token))
 
         (println "Not handled yet:" expected)))))
 
