@@ -47,11 +47,12 @@
    parsed))
 
 ;; Add more expressive print including expected and received types (?)
+;; Exit when error is found
 (defn type-print-failure [token]
-  (let [{:instaparse.gll/keys [start-line start-column]} (meta token)]
-    (println "Type Error: Line" start-line ": Column:" start-column)))
+  (let [{:instaparse.gll/keys [end-line end-column]} (meta token)]
+    (println "Type Error: Line" end-line ": Column:" end-column)))
 
-;; Add variable stack as param
+;; Add variable identification from stack
 (defn evaluate-var [expected expression var-stack]
   (when (seq expression)
     (let [token (first expression)
@@ -140,16 +141,32 @@
   var-stack)
 
 (defn evaluate [extract var-stack]
-  (let [expected (:vartype (:values extract))
-        varname (:varname (:values extract))
-        expression (:expression (:values extract))
+  (let [expression (:expression (:values extract))
         type (:type extract)]
     (case type
       :VariableDeclaration
-      (let [updated-var-stack (assoc var-stack varname expected)]
-        (evaluate-var expected expression updated-var-stack))
-      ;; :IfBlock (do
-      ;;            (evaluate-var expected expression))
+      (let [varname (:varname (:values extract))]
+        (if (not (contains? var-stack varname))
+          (let [expected (:vartype (:values extract))
+                updated-var-stack (assoc var-stack varname expected)]
+            (evaluate-var expected expression updated-var-stack))
+          (do (type-print-failure varname)
+              var-stack)))
+
+      :VariableAssignment
+      (let [varname (:varname (:values extract))]
+        (if (contains? var-stack varname)
+          (let [expected (get var-stack varname)
+                updated-var-stack (evaluate-var expected expression var-stack)]
+            updated-var-stack)
+          (do (type-print-failure varname)
+              var-stack)))
+
+      :IfBlock 
+      (let [expected (:vartype (:values extract))]
+        (evaluate-var expected expression var-stack)
+        var-stack)
+      
       ;; :VariableAssignment (do
       ;;                      (evaluate-var expected expression))
       ;; :MethodCall (do
