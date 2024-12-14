@@ -48,9 +48,9 @@
 
 ;; Add more expressive print including expected and received types (?)
 ;; Exit when error is found
-(defn type-print-failure [token]
+(defn type-print-failure [token msg]
   (let [{:instaparse.gll/keys [end-line end-column]} (meta token)]
-    (println "Type Error: Line" end-line ": Column:" end-column)))
+    (println (str "Type Error: Line " end-line ": Column " end-column ": " msg))))
 
 ;; Add variable identification from stack
 (defn evaluate-var [expected expression var-stack]
@@ -70,7 +70,7 @@
           :Modulo (evaluate-var expected rest-expr var-stack)
           :LeftParen (evaluate-var expected rest-expr var-stack)
           :RightParen (evaluate-var expected rest-expr var-stack)
-          (type-print-failure token))
+          (type-print-failure token "Invalid token in int expression"))
 
         "double"
         (case token-type
@@ -84,7 +84,13 @@
           :Modulo (evaluate-var expected rest-expr var-stack)
           :LeftParen (evaluate-var expected rest-expr var-stack)
           :RightParen (evaluate-var expected rest-expr var-stack)
-          (type-print-failure token))
+          (type-print-failure token "Invalid token in double expression"))
+
+        "string"
+        (case token-type
+          :string (evaluate-var token-type rest-expr var-stack)
+          :Plus (evaluate-var token-type rest-expr var-stack)
+          (type-print-failure token "Invalid token in string expression"))
 
         "bool"
         (case token-type
@@ -95,33 +101,33 @@
           :Identifier (evaluate-var expected rest-expr var-stack)
           :int (evaluate-var "arithmetic-in-bool" expression var-stack)
           :double (evaluate-var "arithmetic-in-bool" expression var-stack)
-          (type-print-failure token))
+          (type-print-failure token "Invalid token in bool expression"))
 
         "arithmetic-in-bool"
         (let [next-token (first rest-expr)]
           (case token-type
             :int (if (and next-token (= (first next-token) :ComparisonOperator))
                    (evaluate-var "comparison" rest-expr var-stack)
-                   (println "Expected a comparison operator after arithmetic expression"))
+                   (type-print-failure next-token "Expected a comparison operator after arithmetic expression"))
             :double (if (and next-token (= (first next-token) :ComparisonOperator))
                       (evaluate-var "comparison" rest-expr var-stack)
-                      (println "Expected a comparison operator after arithmetic expression"))
+                      (type-print-failure next-token "Expected a comparison operator after arithmetic expression"))
             :Identifier (if (and next-token (= (first next-token) :ComparisonOperator))
                           (evaluate-var "comparison" rest-expr var-stack)
-                          (println "Expected a comparison operator after identifier"))
+                          (type-print-failure next-token "Expected a comparison operator after identifier"))
             (println "Invalid arithmetic expression in bool context:" token-type)))
 
         "comparison"
         (case token-type
           :ComparisonOperator (evaluate-var "arithmetic" rest-expr var-stack)
-          (type-print-failure token))
+          (type-print-failure token "Expected a comparison operator"))
 
         "arithmetic"
         (case token-type
           :int (evaluate-var "bool-next" rest-expr var-stack)
           :double (evaluate-var "bool-next" rest-expr var-stack)
           :Identifier (evaluate-var "bool-next" rest-expr var-stack)
-          (type-print-failure token))
+          (type-print-failure token "Invalid token anfter comparison operator"))
 
         "bool-next"
         (let [next-token (first rest-expr)]
@@ -130,12 +136,6 @@
             (if next-token
               (evaluate-var expected rest-expr var-stack)
               nil)))
-
-        "string"
-        (case token-type
-          :string (evaluate-var token-type rest-expr var-stack)
-          :Plus (evaluate-var token-type rest-expr var-stack)
-          (type-print-failure token))
 
         (println "Not handled yet:" expected))))
   var-stack)
@@ -150,7 +150,7 @@
           (let [expected (:vartype (:values extract))
                 updated-var-stack (assoc var-stack varname expected)]
             (evaluate-var expected expression updated-var-stack))
-          (do (type-print-failure varname)
+          (do (type-print-failure varname "Invalid variable declaration")
               var-stack)))
 
       :VariableAssignment
@@ -159,7 +159,7 @@
           (let [expected (get var-stack varname)
                 updated-var-stack (evaluate-var expected expression var-stack)]
             updated-var-stack)
-          (do (type-print-failure varname)
+          (do (type-print-failure varname "Variable does not exist")
               var-stack)))
 
       :IfBlock
