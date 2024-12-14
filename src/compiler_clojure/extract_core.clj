@@ -4,12 +4,12 @@
 
 (defn extract [node]
   (m/match node
-    ([:Type ?t] [:Identifier ?id] "=" & ?other)
+    ([:Type ?t] ?id "=" & ?other)
     {:vartype ?t,
      :varname ?id,
      :expression (extract ?other)}
 
-    ([:Identifier ?id] "=" & ?other)
+    (?id "=" & ?other)
     {:varname ?id,
      :expression (extract ?other)}
 
@@ -24,6 +24,7 @@
     ("return" ?exp)
     {:expression (extract ?exp)}
 
+    ;; :MethodCall with arguments
     ([:Identifier ?id] ?other)
     {:name ?id,
      :arguments (extract ?other)}
