@@ -137,9 +137,26 @@
               (evaluate-var expected rest-expr var-stack)
               nil)))
 
+        "ConsoleWrite"
+        (case token-type
+          :string (evaluate-var expected rest-expr var-stack)
+          :int (evaluate-var expected rest-expr var-stack)
+          :double (evaluate-var expected rest-expr var-stack)
+          :bool (evaluate-var expected rest-expr var-stack)
+          :Identifier (let [varname (first token-value)
+                            var-type (get var-stack varname)]
+                        (if (some #{var-type} ["int" "double" "bool" "string"])
+                          (evaluate-var expected rest-expr var-stack)
+                          (do
+                            (type-print-failure token "Variable does not exist")
+                            var-stack)))
+          :Plus (evaluate-var expected rest-expr var-stack)
+          (type-print-failure token "Invalid expression in console write"))
+
         (println "Not handled yet:" expected))))
   var-stack)
 
+;; Add variable scope
 (defn evaluate [extract var-stack]
   (let [expression (:expression (:values extract))
         type (:type extract)]
@@ -169,6 +186,11 @@
 
       :WhileBlock
       (let [expected (:vartype (:values extract))]
+        (evaluate-var expected expression var-stack)
+        var-stack)
+      
+      :ConsoleWrite
+      (let [expected "ConsoleWrite"]
         (evaluate-var expected expression var-stack)
         var-stack)
 
