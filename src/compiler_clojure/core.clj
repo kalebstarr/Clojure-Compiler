@@ -47,10 +47,10 @@
    parsed))
 
 ;; Add more expressive print including expected and received types (?)
-;; Exit when error is found
 (defn type-print-failure [token msg]
   (let [{:instaparse.gll/keys [end-line end-column]} (meta token)]
-    (println (str "Type Error: Line " end-line ": Column " end-column ": " msg))))
+    (println (str "Type Error: Line " end-line ": Column " end-column ": " msg))
+    (System/exit 1)))
 
 ;; Add variable identification from stack
 (defn evaluate-var [expected expression var-stack]
@@ -195,7 +195,7 @@
       (let [expected (:vartype (:values extract))]
         (evaluate-var expected expression var-stack)
         var-stack)
-      
+
       :ConsoleWrite
       (let [expected "ConsoleWrite"]
         (evaluate-var expected expression var-stack)
@@ -204,9 +204,8 @@
       ;; :MethodCall (do
       ;;              (evaluate-var expected expression))
       ;; :InstructionReturn (do
-      ;;                     (evaluate-var expected expression))
-      (do (println "Unknown type" type)
-          var-stack))))
+      ;;                     (evaluate-var expected expression)) 
+      var-stack)))
 
 (defn type-check [extracts]
   (reduce
@@ -229,5 +228,3 @@
       :debug (do
                (println message)
                (parser/parser-debug (read-file file))))))
-
-(-main "-c" "resources/Sample.cs")
