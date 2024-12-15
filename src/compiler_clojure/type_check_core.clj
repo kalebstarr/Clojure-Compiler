@@ -46,8 +46,8 @@
 
         "string"
         (case token-type
-          :string (evaluate-var token-type rest-expr var-stack)
-          :Plus (evaluate-var token-type rest-expr var-stack)
+          :string (evaluate-var expected rest-expr var-stack)
+          :Plus (evaluate-var expected rest-expr var-stack)
           :Identifier (if (contains? var-stack token)
                         (evaluate-var expected rest-expr var-stack)
                         (type-print-failure token (str "Variable '" (last token) "' has not been initialized")))
@@ -59,9 +59,16 @@
           :LogicOperator (evaluate-var expected rest-expr var-stack)
           :LeftParen (evaluate-var expected rest-expr var-stack)
           :RightParen (evaluate-var expected rest-expr var-stack)
-          :Identifier (evaluate-var expected rest-expr var-stack)
+          :Identifier (if (contains? var-stack token)
+                        (let [varname (first token-value)
+                              var-type (get var-stack varname)]
+                          (if (some #{var-type} ["int" "double"])
+                            (evaluate-var "arithmetic-in-bool" expression var-stack)
+                            var-stack))
+                        (type-print-failure token (str "Variable '" (last token) "' has not been initialized")))
           :int (evaluate-var "arithmetic-in-bool" expression var-stack)
           :double (evaluate-var "arithmetic-in-bool" expression var-stack)
+          :LogicNot (evaluate-var expected rest-expr var-stack)
           (type-print-failure token "Invalid token in bool expression"))
 
         "arithmetic-in-bool"
@@ -104,8 +111,7 @@
           :int (evaluate-var expected rest-expr var-stack)
           :double (evaluate-var expected rest-expr var-stack)
           :bool (evaluate-var expected rest-expr var-stack)
-          :Identifier (let [varname (first token-value)
-                            var-type (get var-stack varname)]
+          :Identifier (let [var-type (get var-stack token)]
                         (if (some #{var-type} ["int" "double" "bool" "string"])
                           (evaluate-var expected rest-expr var-stack)
                           (do
