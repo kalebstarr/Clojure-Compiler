@@ -47,6 +47,20 @@
     ("Console.WriteLine" ?exp)
     {:expression (extract ?exp)}
 
+    ;; :MethodDeclaration
+    ([:GenericMethodDeclaration "static" [:Type ?t] ?id ?params ?other])
+    {:type ?t
+     :name ?id
+     :params (extract ?params)}
+
+    ([:VoidMethodDeclaration "static" "void" ?id ?params ?other])
+    {:type "void"
+     :name ?id
+     :params (extract ?params)}
+
+    [:ParameterList & ?params]
+    ?params
+
     [?one & ?other]
     (concat [?one] (extract ?other))
 
@@ -86,6 +100,11 @@
 
       :ConsoleWrite
       (concat [{:type :ConsoleWrite
+                :values (extract (rest node))}]
+              (mapcat extract-info (rest node)))
+
+      :MethodDeclaration
+      (concat [{:type :MethodDeclaration
                 :values (extract (rest node))}]
               (mapcat extract-info (rest node)))
 
