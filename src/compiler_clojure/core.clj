@@ -63,7 +63,9 @@
         "int"
         (case token-type
           :int (evaluate-var expected rest-expr var-stack)
-          :Identifier (evaluate-var expected rest-expr var-stack)
+          :Identifier (if (contains? var-stack token)
+                        (evaluate-var expected rest-expr var-stack)
+                        (type-print-failure token (str "Variable '" (last token) "' has not been initialized")))
           :Plus (evaluate-var expected rest-expr var-stack)
           :Minus (evaluate-var expected rest-expr var-stack)
           :Star (evaluate-var expected rest-expr var-stack)
@@ -76,7 +78,9 @@
         (case token-type
           :int (evaluate-var expected rest-expr var-stack)
           :double (evaluate-var expected rest-expr var-stack)
-          :Identifier (evaluate-var expected rest-expr var-stack)
+          :Identifier (if (contains? var-stack token)
+                        (evaluate-var expected rest-expr var-stack)
+                        (type-print-failure token (str "Variable '" (last token) "' has not been initialized")))
           :Plus (evaluate-var expected rest-expr var-stack)
           :Minus (evaluate-var expected rest-expr var-stack)
           :Star (evaluate-var expected rest-expr var-stack)
@@ -90,6 +94,9 @@
         (case token-type
           :string (evaluate-var token-type rest-expr var-stack)
           :Plus (evaluate-var token-type rest-expr var-stack)
+          :Identifier (if (contains? var-stack token)
+                        (evaluate-var expected rest-expr var-stack)
+                        (type-print-failure token (str "Variable '" (last token) "' has not been initialized")))
           (type-print-failure token "Invalid token in string expression"))
 
         "bool"
@@ -148,7 +155,7 @@
                         (if (some #{var-type} ["int" "double" "bool" "string"])
                           (evaluate-var expected rest-expr var-stack)
                           (do
-                            (type-print-failure token "Variable does not exist")
+                            (type-print-failure token (str "Variable '" (last token) "' has not been initialized"))
                             var-stack)))
           :Plus (evaluate-var expected rest-expr var-stack)
           (type-print-failure token "Invalid expression in console write"))
@@ -176,7 +183,7 @@
           (let [expected (get var-stack varname)
                 updated-var-stack (evaluate-var expected expression var-stack)]
             updated-var-stack)
-          (do (type-print-failure varname "Variable does not exist")
+          (do (type-print-failure varname (str "Variable '" (last varname) "' has not been initialized"))
               var-stack)))
 
       :IfBlock

@@ -49,17 +49,17 @@
 
     ;; :MethodDeclaration
     ([:GenericMethodDeclaration "static" [:Type ?t] ?id ?params ?other])
-    {:type ?t
-     :name ?id
+    {:method-type ?t
+     :method-name ?id
      :params (extract ?params)}
 
     ([:VoidMethodDeclaration "static" "void" ?id ?params ?other])
-    {:type "void"
-     :name ?id
+    {:method-type "void"
+     :method-name ?id
      :params (extract ?params)}
 
     [:ParameterList & ?params]
-    ?params
+    (filter #(not= "," %) ?params)
 
     [?one & ?other]
     (concat [?one] (extract ?other))
