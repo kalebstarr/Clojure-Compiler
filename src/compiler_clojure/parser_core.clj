@@ -10,7 +10,7 @@
 
     Namespace = 'namespace' Identifier <LeftBracket> ClassDeclaration <RightBracket>
 
-    ClassDeclaration = 'class' Identifier <LeftBracket> MethodDeclaration+ <RightBracket>
+    ClassDeclaration = 'class' Identifier <LeftBracket> (StaticVariableDeclaration)* MethodDeclaration+ <RightBracket>
 
     MethodDeclaration = GenericMethodDeclaration | VoidMethodDeclaration
     GenericMethodDeclaration = 'static' Type Identifier <LeftParen> ParameterList? <RightParen> MethodBody
@@ -45,10 +45,11 @@
     InstructionBlock = <LeftBracket> Instruction* <RightBracket>
     InstructionReturn = 'return' Expression <Semicolon>
 
+    <StaticVariableDeclaration> = 'static' VariableDeclaration
     VariableDeclaration = Type Identifier '=' Expression <Semicolon>
     VariableAssignment = Identifier '=' Expression <Semicolon>
 
-    MethodCall = Identifier <LeftParen> Arguments? <RightParen>
+    MethodCall = Identifier LeftParen Arguments? RightParen
     Arguments = Expression (',' Expression)*
 
 
@@ -63,9 +64,9 @@
 
 
     <Literal> = IntegerLiteral
-            | DoubleLiteral
-            | StringLiteral
-            | BooleanLiteral
+              | DoubleLiteral
+              | StringLiteral
+              | BooleanLiteral
     IntegerLiteral = #'-?[0-9]+'
     DoubleLiteral = #'-?[0-9]+\\.[0-9]+'
     StringLiteral = #'\"(?:[^\\\"]|\\.)*\"'
@@ -75,21 +76,21 @@
              | ComparisonOperator
              | LogicOperator
     ArithmeticOperator = Plus
-                         | Minus
-                         | Star
-                         | Slash
-                         | Modulo
+                       | Minus
+                       | Star
+                       | Slash
+                       | Modulo
     Plus = '+'
     Minus = '-'
     Star = '*'
     Slash = '/'
     Modulo = '%'
     ComparisonOperator = Equals
-                         | Smaller
-                         | Greater
-                         | Seq
-                         | Geq
-                         | Uneq
+                       | Smaller
+                       | Greater
+                       | Seq
+                       | Geq
+                       | Uneq
     Equals = '=='
     Smaller = '<'
     Greater = '>'
