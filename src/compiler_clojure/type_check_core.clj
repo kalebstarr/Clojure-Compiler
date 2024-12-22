@@ -65,6 +65,7 @@
           :Plus (evaluate-var expected rest-expr var-stack method-stack)
           :Minus (evaluate-var expected rest-expr var-stack method-stack)
           :Star (evaluate-var expected rest-expr var-stack method-stack)
+          :Slash (evaluate-var expected rest-expr var-stack method-stack)
           :Modulo (evaluate-var expected rest-expr var-stack method-stack)
           :LeftParen (evaluate-var expected rest-expr var-stack method-stack)
           :RightParen (evaluate-var expected rest-expr var-stack method-stack)
