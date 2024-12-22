@@ -124,7 +124,7 @@
   var-stack)
 
 ;; Add variable scope
-(defn evaluate [extract var-stack]
+(defn evaluate [extract var-stack method-stack]
   (let [expression (:expression (:values extract))
         type (:type extract)]
     (case type
@@ -174,7 +174,6 @@
         param-type (map #(second (second %)) params)
         expected {:method-type method-type :params param-type}
         updated-var-stack (assoc method-stack method-name expected)]
-    (println extract method-stack)
     updated-var-stack))
 
 (defn collect-method-stack [method-extracts]
@@ -186,9 +185,9 @@
 
 (defn type-check [extracts]
   (let [method-extract (filter #(= (:type %) :MethodDeclaration) extracts)
-        method-stack (collect-method-stack method-extract)])
-  (reduce
-   (fn [var-stack extract]
-     (evaluate extract var-stack))
-   {}
-   (filter #(not= (:type %) :MethodDeclaration) extracts)))
+        method-stack (collect-method-stack method-extract)] 
+    (reduce
+     (fn [var-stack extract]
+       (evaluate extract var-stack method-stack))
+     {}
+     (filter #(not= (:type %) :MethodDeclaration) extracts))))
