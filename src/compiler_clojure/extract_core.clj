@@ -34,7 +34,7 @@
     {:name ?id}
 
     [:Arguments & ?other]
-    (extract ?other)
+    ?other
 
     ;; Expr in :VarDec and :VarAssign
     ([:Expression & ?other])

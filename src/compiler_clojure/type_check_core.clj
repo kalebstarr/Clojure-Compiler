@@ -1,4 +1,6 @@
-(ns compiler-clojure.type-check-core)
+(ns compiler-clojure.type-check-core
+  (:require 
+   [compiler-clojure.extract-core :as extractor]))
 
 ;; Add more expressive print including expected and received types (?)
 (defn type-print-failure [token msg]
@@ -76,13 +78,13 @@
           (case token-type
             :int (if (and next-token (= (first next-token) :ComparisonOperator))
                    (evaluate-var "comparison" rest-expr var-stack)
-                   (type-print-failure next-token "Expected a comparison operator after arithmetic expression"))
+                   (type-print-failure token "Expected a comparison operator after arithmetic expression"))
             :double (if (and next-token (= (first next-token) :ComparisonOperator))
                       (evaluate-var "comparison" rest-expr var-stack)
-                      (type-print-failure next-token "Expected a comparison operator after arithmetic expression"))
+                      (type-print-failure token "Expected a comparison operator after arithmetic expression"))
             :Identifier (if (and next-token (= (first next-token) :ComparisonOperator))
                           (evaluate-var "comparison" rest-expr var-stack)
-                          (type-print-failure next-token "Expected a comparison operator after identifier"))
+                          (type-print-failure token "Expected a comparison operator after identifier"))
             (println "Invalid arithmetic expression in bool context:" token-type)))
 
         "comparison"
@@ -123,6 +125,12 @@
         (println "Not handled yet:" expected))))
   var-stack)
 
+(defn evaluate-method [pairs var-stack method-stack]
+  (reduce (fn [acc [expected expr]]
+            (evaluate-var expected expr acc))
+          var-stack
+          pairs))
+
 ;; Add variable scope
 (defn evaluate [extract var-stack method-stack]
   (let [expression (:expression (:values extract))
@@ -162,11 +170,13 @@
         var-stack)
 
       :MethodCall
-      (let [{:keys [name arguments]} (:values extract)]
+      (let [{:keys [name arguments]} (:values extract)
+            filtered-arguments (filter #(not= "," %) arguments)
+            extracted-arguments (map extractor/extract filtered-arguments)]
         (if (contains? method-stack name)
-          (if (= (count (:params (get method-stack name))) (count arguments))
-            (let [pairs (map vector (:params (get method-stack name)) arguments)]
-              (println pairs))
+          (if (= (count (:params (get method-stack name))) (count extracted-arguments))
+            (let [pairs (map vector (:params (get method-stack name)) extracted-arguments)]
+              (evaluate-method pairs var-stack method-stack))
             (type-print-failure name (str "Wrong amount of arguments in method call '" (last name) "'")))
           (type-print-failure name (str "Method '" (last name) "' has not been declared")))
         var-stack)
