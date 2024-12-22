@@ -161,8 +161,16 @@
         (evaluate-var expected expression var-stack)
         var-stack)
 
-      ;; :MethodCall (do
-      ;;              (evaluate-var expected expression))
+      :MethodCall
+      (let [{:keys [name arguments]} (:values extract)]
+        (if (contains? method-stack name)
+          (if (= (count (:params (get method-stack name))) (count arguments))
+            (let [pairs (map vector (:params (get method-stack name)) arguments)]
+              (println pairs))
+            (type-print-failure name (str "Wrong amount of arguments in method call '" (last name) "'")))
+          (type-print-failure name (str "Method '" (last name) "' has not been declared")))
+        var-stack)
+
       ;; :InstructionReturn (do
       ;;                     (evaluate-var expected expression)) 
       (do (println extract)
