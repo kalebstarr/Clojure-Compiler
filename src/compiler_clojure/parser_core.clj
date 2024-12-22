@@ -40,7 +40,7 @@
                 | InstructionBlock
                 | InstructionReturn
                 | ConsoleWrite
-                | <Comment>
+                | Comment
                 | MethodCall <Semicolon>
     InstructionBlock = <LeftBracket> Instruction* <RightBracket>
     InstructionReturn = 'return' Expression <Semicolon>
@@ -103,9 +103,9 @@
     LogicNot = '!'
 
 
-    Comment = SingleLineComment | MultiLineComment
-    SingleLineComment = #'//.*'
-    MultiLineComment = '/*' #'[^*]*\\*+(?:[^/*][^*]*\\*+)*/'
+    <Comment> = SingleLineComment | MultiLineComment
+    <SingleLineComment> = #'//.*'
+    <MultiLineComment> = '/*' #'[^*]*\\*+(?:[^/*][^*]*\\*+)*/'
 
 
     LeftParen = '('
