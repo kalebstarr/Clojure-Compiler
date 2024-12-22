@@ -14,7 +14,7 @@
     [?one & ?other]
     (methodcall-extract ?other)
 
-    _ node))
+    _ nil))
 
 (defn extract [node]
   (m/match node
@@ -77,7 +77,7 @@
     {:method-type "void"
      :method-name ?id
      :params (extract ?params)
-     :method-return nil}
+     :method-return (methodcall-extract ?other)}
 
     [:ParameterList & ?params]
     (filter #(not= "," %) ?params)

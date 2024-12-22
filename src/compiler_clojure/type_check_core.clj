@@ -1,5 +1,5 @@
 (ns compiler-clojure.type-check-core
-  (:require 
+  (:require
    [compiler-clojure.extract-core :as extractor]))
 
 ;; Add more expressive print including expected and received types (?)
@@ -172,7 +172,7 @@
         (println "Not handled yet:" expected))))
   var-stack)
 
-(defn evaluate-method [pairs var-stack method-stack]
+(defn evaluate-methodcall [pairs var-stack method-stack]
   (reduce (fn [acc [expected expr]]
             (evaluate-var expected expr acc method-stack))
           var-stack
@@ -223,23 +223,31 @@
         (if (contains? method-stack name)
           (if (= (count (:params (get method-stack name))) (count extracted-arguments))
             (let [pairs (map vector (:params (get method-stack name)) extracted-arguments)]
-              (evaluate-method pairs var-stack method-stack))
+              (evaluate-methodcall pairs var-stack method-stack))
             (type-print-failure name (str "Wrong amount of arguments in method call '" (last name) "'")))
           (type-print-failure name (str "Method '" (last name) "' has not been declared")))
         var-stack)
 
-      ;; :InstructionReturn (do
-      ;;                     (evaluate-var expected expression)) 
-      (do (println extract)
-          var-stack))))
+      ;; This includes checking for :InstructionReturn as they are bound
+      :MethodDeclaration
+      (let [{:keys [method-type method-name method-return]} (:values extract)]
+        (if (= method-type "void")
+          (when (not= method-return nil)
+            (type-print-failure method-name (str method-type " method expects no return")))
+          (if (nil? method-return)
+            (type-print-failure method-name (str method-type " method expects return"))
+            (evaluate-var method-type (extractor/extract method-return) var-stack method-stack)))
+        var-stack)
+
+      var-stack)))
 
 (defn collect-methods [extract method-stack]
   (let [method-name (:method-name (:values extract))
-        {:keys [method-type params]} (:values extract)
+        {:keys [method-type params method-return]} (:values extract)
         param-type (map #(second (second %)) params)
-        expected {:method-type method-type :params param-type}
-        updated-var-stack (assoc method-stack method-name expected)]
-    updated-var-stack))
+        expected {:method-type method-type :params param-type :method-return method-return}
+        updated-method-stack (assoc method-stack method-name expected)]
+    updated-method-stack))
 
 (defn collect-method-stack [method-extracts]
   (reduce
@@ -250,9 +258,9 @@
 
 (defn type-check [extracts]
   (let [method-extract (filter #(= (:type %) :MethodDeclaration) extracts)
-        method-stack (collect-method-stack method-extract)] 
+        method-stack (collect-method-stack method-extract)]
     (reduce
      (fn [var-stack extract]
        (evaluate extract var-stack method-stack))
      {}
-     (filter #(not= (:type %) :MethodDeclaration) extracts))))
+     extracts)))

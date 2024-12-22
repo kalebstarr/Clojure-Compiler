@@ -1,5 +1,5 @@
 (ns compiler-clojure.parser-core
-  (:require 
+  (:require
    [instaparse.core :as insta]))
 
 (def csharp-grammar
