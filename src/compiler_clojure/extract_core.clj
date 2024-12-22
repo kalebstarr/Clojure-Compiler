@@ -25,9 +25,13 @@
     {:expression (extract ?exp)}
 
     ;; :MethodCall with arguments
-    ([:Identifier ?id] ?other)
+    (?id [:LeftParen ?x] ?other [:RightParen ?y])
     {:name ?id,
      :arguments (extract ?other)}
+
+    ;; :MethodCall without arguments
+    (?id [:LeftParen ?x] [:RightParen ?y])
+    {:name ?id}
 
     [:Arguments & ?other]
     (extract ?other)
