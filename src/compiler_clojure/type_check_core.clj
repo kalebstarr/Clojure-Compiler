@@ -8,6 +8,47 @@
     (println (str "Type Error: Line " end-line ": Column " end-column ": " msg))
     (System/exit 1)))
 
+(declare evaluate-var)
+
+(defn soup [expected extract var-stack method-stack]
+  (let [token (first extract)
+        rest-expr (rest extract)
+        method-call (first (extractor/extract-info token))
+        {:keys [name]} (:values method-call)]
+    (when (contains? method-stack name)
+      (case expected
+        "int"
+        (case (:method-type (get method-stack name))
+          "int" (evaluate-var expected rest-expr var-stack method-stack)
+
+          (type-print-failure token (str "Invalid Method return type. Expected type: " expected)))
+
+        "double"
+        (case (:method-type (get method-stack name))
+          "int" (evaluate-var expected rest-expr var-stack method-stack)
+          "double" (evaluate-var expected rest-expr var-stack method-stack)
+
+          (type-print-failure token (str "Invalid Method return type. Expected type: " expected)))
+
+        "string"
+        (case (:method-type (get method-stack name))
+          "int" (evaluate-var expected rest-expr var-stack method-stack)
+          "double" (evaluate-var expected rest-expr var-stack method-stack)
+          "string" (evaluate-var expected rest-expr var-stack method-stack)
+          "bool" (evaluate-var expected rest-expr var-stack method-stack)
+
+          (type-print-failure token (str "Invalid Method return type. Expected type: " expected)))
+
+        "bool"
+        (case (:method-type (get method-stack name))
+          "int" (evaluate-var "arithmetic-in-bool" extract var-stack method-stack)
+          "double" (evaluate-var "arithmetic-in-bool" extract var-stack method-stack)
+          "bool" (evaluate-var expected rest-expr var-stack method-stack)
+
+          (type-print-failure token (str "Invalid Method return type. Expected type: " expected)))
+
+        (println "Not handled yet:" expected)))))
+
 (defn evaluate-var [expected expression var-stack method-stack]
   (when (seq expression)
     (let [token (first expression)
@@ -27,6 +68,7 @@
           :Modulo (evaluate-var expected rest-expr var-stack method-stack)
           :LeftParen (evaluate-var expected rest-expr var-stack method-stack)
           :RightParen (evaluate-var expected rest-expr var-stack method-stack)
+          :MethodCall (soup expected expression var-stack method-stack)
           (type-print-failure token "Invalid token in int expression"))
 
         "double"
@@ -43,6 +85,7 @@
           :Modulo (evaluate-var expected rest-expr var-stack method-stack)
           :LeftParen (evaluate-var expected rest-expr var-stack method-stack)
           :RightParen (evaluate-var expected rest-expr var-stack method-stack)
+          :MethodCall (soup expected expression var-stack method-stack)
           (type-print-failure token "Invalid token in double expression"))
 
         "string"
@@ -52,6 +95,7 @@
           :Identifier (if (contains? var-stack token)
                         (evaluate-var expected rest-expr var-stack method-stack)
                         (type-print-failure token (str "Variable '" (last token) "' has not been initialized")))
+          :MethodCall (soup expected expression var-stack method-stack)
           (type-print-failure token "Invalid token in string expression"))
 
         "bool"
@@ -70,7 +114,7 @@
           :int (evaluate-var "arithmetic-in-bool" expression var-stack method-stack)
           :double (evaluate-var "arithmetic-in-bool" expression var-stack method-stack)
           :LogicNot (evaluate-var expected rest-expr var-stack method-stack)
-          :MethodCall (println (first (extractor/extract-info expression)))
+          :MethodCall (soup expected expression var-stack method-stack)
           (type-print-failure token "Invalid token in bool expression"))
 
         "arithmetic-in-bool"
@@ -85,6 +129,7 @@
             :Identifier (if (and next-token (= (first next-token) :ComparisonOperator))
                           (evaluate-var "comparison" rest-expr var-stack method-stack)
                           (type-print-failure token "Expected a comparison operator after identifier"))
+            :MethodCall (soup expected expression var-stack method-stack)
             (println "Invalid arithmetic expression in bool context:" token-type)))
 
         "comparison"
@@ -97,6 +142,7 @@
           :int (evaluate-var "bool-next" rest-expr var-stack method-stack)
           :double (evaluate-var "bool-next" rest-expr var-stack method-stack)
           :Identifier (evaluate-var "bool-next" rest-expr var-stack method-stack)
+          :MethodCall (soup expected expression var-stack method-stack)
           (type-print-failure token "Invalid token anfter comparison operator"))
 
         "bool-next"
@@ -120,6 +166,7 @@
                             (type-print-failure token (str "Variable '" (last token) "' has not been initialized"))
                             var-stack)))
           :Plus (evaluate-var expected rest-expr var-stack method-stack)
+          :MethodCall (soup expected expression var-stack method-stack)
           (type-print-failure token "Invalid expression in console write"))
 
         (println "Not handled yet:" expected))))
