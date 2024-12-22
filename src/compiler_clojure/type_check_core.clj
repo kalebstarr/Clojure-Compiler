@@ -165,11 +165,30 @@
       ;;              (evaluate-var expected expression))
       ;; :InstructionReturn (do
       ;;                     (evaluate-var expected expression)) 
-      var-stack)))
+      (do (println extract)
+          var-stack))))
+
+(defn collect-methods [extract method-stack]
+  (let [method-name (:method-name (:values extract))
+        {:keys [method-type params]} (:values extract)
+        param-type (map #(second (second %)) params)
+        expected {:method-type method-type :params param-type}
+        updated-var-stack (assoc method-stack method-name expected)]
+    (println extract method-stack)
+    updated-var-stack))
+
+(defn collect-method-stack [method-extracts]
+  (reduce
+   (fn [method-stack extract]
+     (collect-methods extract method-stack))
+   {}
+   method-extracts))
 
 (defn type-check [extracts]
+  (let [method-extract (filter #(= (:type %) :MethodDeclaration) extracts)
+        method-stack (collect-method-stack method-extract)])
   (reduce
    (fn [var-stack extract]
      (evaluate extract var-stack))
    {}
-   extracts))
+   (filter #(not= (:type %) :MethodDeclaration) extracts)))
