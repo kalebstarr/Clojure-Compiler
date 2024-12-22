@@ -2,6 +2,20 @@
   (:require
    [meander.epsilon :as m]))
 
+(defn methodcall-extract [node]
+  (m/match node
+    [:InstructionReturn "return" ?other]
+    ?other
+
+    ;; This extracts nested instructions as :InstructionReturn is nested
+    [?one ?other]
+    (methodcall-extract ?other)
+
+    [?one & ?other]
+    (methodcall-extract ?other)
+
+    _ node))
+
 (defn extract [node]
   (m/match node
     ([:Type ?t] ?id "=" & ?other)
@@ -31,7 +45,8 @@
 
     ;; :MethodCall without arguments
     (?id [:LeftParen ?x] [:RightParen ?y])
-    {:name ?id}
+    {:name ?id
+     :arguments nil}
 
     [:Arguments & ?other]
     ?other
@@ -55,12 +70,14 @@
     ([:GenericMethodDeclaration "static" [:Type ?t] ?id ?params ?other])
     {:method-type ?t
      :method-name ?id
-     :params (extract ?params)}
+     :params (extract ?params)
+     :method-return (methodcall-extract ?other)}
 
     ([:VoidMethodDeclaration "static" "void" ?id ?params ?other])
     {:method-type "void"
      :method-name ?id
-     :params (extract ?params)}
+     :params (extract ?params)
+     :method-return nil}
 
     [:ParameterList & ?params]
     (filter #(not= "," %) ?params)
