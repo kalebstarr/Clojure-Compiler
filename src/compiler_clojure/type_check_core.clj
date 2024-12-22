@@ -30,7 +30,7 @@
 
           (type-print-failure token (str "Invalid Method return type. Expected type: " expected)))
 
-        "string"
+        ("string" "ConsoleWrite")
         (case (:method-type (get method-stack name))
           "int" (evaluate-var expected rest-expr var-stack method-stack)
           "double" (evaluate-var expected rest-expr var-stack method-stack)
