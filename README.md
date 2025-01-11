@@ -1,6 +1,6 @@
-# compiler-clojure
+# Clojure Compiler
 
-FIXME: description
+A small project for Uni. Most of the below can be ignored, as setup is far from done.
 
 ## Installation
 
