@@ -136,3 +136,15 @@
 
       (mapcat extract-info node))
     []))
+
+(defn extract-class-content [tree]
+  (when (sequential? tree)
+    (case (first tree)
+      :ClassDeclaration
+      (m/match tree
+        [:ClassDeclaration _ _ & ?other]
+        ?other
+
+        _ tree)
+
+      (mapcat extract-method tree))))
