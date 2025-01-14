@@ -19,10 +19,10 @@
 (defn extract [node]
   (m/match node
     ([:Type ?t] ?id "=" & ?other)
-    {:static false,
-     :vartype ?t,
+    {:vartype ?t,
      :varname ?id,
-     :expression (extract ?other)}
+     :expression (extract ?other),
+     :static false}
 
     (?id "=" & ?other)
     {:varname ?id,
@@ -143,15 +143,30 @@
        (filter #(= :StaticVariableDeclaration (first %)))
        (map #(m/match %
                [:StaticVariableDeclaration _ [:VariableDeclaration [:Type ?t] ?id "=" & ?other]]
-               {:static true,
-                :vartype ?t,
+               {:vartype ?t,
                 :varname ?id,
-                :expression (extract ?other)}
+                :expression (extract ?other),
+                :static true}
 
                _ %))))
 
 (defn extract-method-declaration [node]
-  (filter #(= :MethodDeclaration (first %)) node))
+  (->> node
+       (filter #(= :MethodDeclaration (first %)))
+       (map #(m/match (rest %)
+               ([:GenericMethodDeclaration "static" [:Type ?t] ?id ?params [:MethodBody & ?other]])
+               {:method-type ?t
+                :method-name ?id
+                :params (extract ?params)
+                :method-return (methodcall-extract ?other)
+                :method-body ?other}
+
+               ([:VoidMethodDeclaration "static" "void" ?id ?params [:MethodBody & ?other]])
+               {:method-type "void"
+                :method-name ?id
+                :params (extract ?params)
+                :method-return (methodcall-extract ?other)
+                :method-body ?other}))))
 
 (defn extract-class-content [tree]
   (when (sequential? tree)
@@ -165,6 +180,7 @@
 
       (mapcat extract-class-content tree))))
 
+;; currently exists for only debug purposes
 (defn ex [tree]
   (let [extracted (extract-class-content tree)
         static-vars (extract-static-var-declarations extracted)
