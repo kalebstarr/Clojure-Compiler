@@ -45,7 +45,7 @@
     InstructionBlock = <LeftBracket> Instruction* <RightBracket>
     InstructionReturn = 'return' Space Expression <Semicolon>
 
-    <StaticVariableDeclaration> = 'static' Space VariableDeclaration
+    StaticVariableDeclaration = 'static' Space VariableDeclaration
     VariableDeclaration = Type Identifier '=' Expression <Semicolon>
     VariableAssignment = Identifier '=' Expression <Semicolon>
 
@@ -104,8 +104,8 @@
 
 
     <Comment> = SingleLineComment | MultiLineComment
-    <SingleLineComment> = #'//.*'
-    <MultiLineComment> = '/*' #'[^*]*\\*+(?:[^/*][^*]*\\*+)*/'
+    <SingleLineComment> = <#'//.*'>
+    <MultiLineComment> = <'/*'> <#'[^*]*\\*+(?:[^/*][^*]*\\*+)*/'>
 
 
     LeftParen = '('
