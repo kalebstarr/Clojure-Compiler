@@ -114,7 +114,7 @@
     RightBracket = '}'
     Semicolon = ';'
     
-    <Space> = ' '"
+    <Space> = <' '>"
    :auto-whitespace :standard
    :input-format :ebnf
    :output-format :hiccup))
