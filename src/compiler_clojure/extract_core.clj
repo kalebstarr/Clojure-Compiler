@@ -19,7 +19,8 @@
 (defn extract [node]
   (m/match node
     ([:Type ?t] ?id "=" & ?other)
-    {:vartype ?t,
+    {:static false,
+     :vartype ?t,
      :varname ?id,
      :expression (extract ?other)}
 
@@ -137,6 +138,21 @@
       (mapcat extract-info node))
     []))
 
+(defn extract-static-var-declarations [node]
+  (->> node
+       (filter #(= :StaticVariableDeclaration (first %)))
+       (map #(m/match %
+               [:StaticVariableDeclaration _ [:VariableDeclaration [:Type ?t] ?id "=" & ?other]]
+               {:static true,
+                :vartype ?t,
+                :varname ?id,
+                :expression (extract ?other)}
+
+               _ %))))
+
+(defn extract-method-declaration [node]
+  (filter #(= :MethodDeclaration (first %)) node))
+
 (defn extract-class-content [tree]
   (when (sequential? tree)
     (case (first tree)
@@ -147,4 +163,11 @@
 
         _ tree)
 
-      (mapcat extract-method tree))))
+      (mapcat extract-class-content tree))))
+
+(defn ex [tree]
+  (let [extracted (extract-class-content tree)
+        static-vars (extract-static-var-declarations extracted)
+        method-declaratations (extract-method-declaration extracted)]
+    (println static-vars)
+    (println method-declaratations)))
