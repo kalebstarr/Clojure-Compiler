@@ -6,22 +6,22 @@
   (insta/parser
    "Program = Using* Namespace
 
-    Using = 'using' Identifier <Semicolon>
+    Using = 'using' Space Identifier <Semicolon>
 
-    Namespace = 'namespace' Identifier <LeftBracket> ClassDeclaration <RightBracket>
+    Namespace = 'namespace' Space Identifier <LeftBracket> ClassDeclaration <RightBracket>
 
-    ClassDeclaration = 'class' Identifier <LeftBracket> (StaticVariableDeclaration)* MethodDeclaration+ <RightBracket>
+    ClassDeclaration = 'class' Space Identifier <LeftBracket> (StaticVariableDeclaration)* MethodDeclaration+ <RightBracket>
 
     MethodDeclaration = GenericMethodDeclaration | VoidMethodDeclaration
-    GenericMethodDeclaration = 'static' Type Identifier <LeftParen> ParameterList? <RightParen> MethodBody
-    VoidMethodDeclaration = 'static' 'void' Identifier <LeftParen> ParameterList? <RightParen> MethodBody
+    GenericMethodDeclaration = 'static' Space Type Identifier <LeftParen> ParameterList? <RightParen> MethodBody
+    VoidMethodDeclaration = 'static' Space 'void' Space Identifier <LeftParen> ParameterList? <RightParen> MethodBody
     MethodBody = <LeftBracket> (Instruction)* <RightBracket>
     ParameterList = Parameter (',' Parameter)*
     Parameter = Type Identifier
 
     Identifier = !('true' | 'false') #'[a-zA-Z_][a-zA-Z0-9_]*'
 
-    Type = 'bool' | (('int' | 'double' | 'string') #'\\[\\]'?)
+    Type = ('bool' | (('int' | 'double' | 'string') #'\\[\\]'?)) Space
 
 
     Expression = LogicalExpression
@@ -43,9 +43,9 @@
                 | Comment
                 | MethodCall <Semicolon>
     InstructionBlock = <LeftBracket> Instruction* <RightBracket>
-    InstructionReturn = 'return' Expression <Semicolon>
+    InstructionReturn = 'return' Space Expression <Semicolon>
 
-    <StaticVariableDeclaration> = 'static' VariableDeclaration
+    <StaticVariableDeclaration> = 'static' Space VariableDeclaration
     VariableDeclaration = Type Identifier '=' Expression <Semicolon>
     VariableAssignment = Identifier '=' Expression <Semicolon>
 
@@ -112,7 +112,9 @@
     RightParen = ')'
     LeftBracket = '{'
     RightBracket = '}'
-    Semicolon = ';'"
+    Semicolon = ';'
+    
+    <Space> = ' '"
    :auto-whitespace :standard
    :input-format :ebnf
    :output-format :hiccup))
