@@ -67,9 +67,6 @@
     ("Console.WriteLine" ?exp)
     {:expression (extract ?exp)}
 
-    [:ParameterList & ?params]
-    (filter #(not= "," %) ?params)
-
     [?one & ?other]
     (concat [?one] (extract ?other))
 
@@ -137,6 +134,9 @@
 
                _ %))))
 
+(defn extract-parameter-list [param-list]
+  (filter #(not= "," %) (rest param-list)))
+
 (defn extract-method-declaration [node]
   (->> node
        (filter #(= :MethodDeclaration (first %)))
@@ -144,14 +144,14 @@
                ([:GenericMethodDeclaration "static" [:Type ?t] ?id ?params [:MethodBody & ?other]])
                {:method-type ?t
                 :method-name ?id
-                :params (extract ?params)
+                :params (extract-parameter-list ?params)
                 :method-return (methodcall-extract ?other)
                 :method-body ?other}
 
                ([:VoidMethodDeclaration "static" "void" ?id ?params [:MethodBody & ?other]])
                {:method-type "void"
                 :method-name ?id
-                :params (extract ?params)
+                :params (extract-parameter-list ?params)
                 :method-return (methodcall-extract ?other)
                 :method-body ?other}))))
 
