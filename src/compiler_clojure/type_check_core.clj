@@ -270,6 +270,31 @@
    {}
    method-extracts))
 
+(defn collect-static-vars [extract var-stack]
+  (let [varname (:varname extract)]
+    (if (not (contains? var-stack varname))
+      (let [expected (:vartype extract)
+            updated-var-stack (assoc var-stack varname expected)]
+        updated-var-stack)
+      (do (type-print-failure varname "Invalid variable declaration")
+          var-stack))))
+
+(defn collect-static-var-stack [static-vars]
+  (reduce
+   (fn [var-stack extract]
+     (collect-static-vars extract var-stack))
+   {}
+   static-vars))
+
+;; currently exists for only debug purposes
+(defn ex [tree]
+  (let [extracted (extractor/extract-class-content tree)
+        static-vars (extractor/extract-static-var-declarations extracted)
+        method-declaratations (extractor/extract-method-declaration extracted)
+        static-var-stack (collect-static-var-stack static-vars)]
+    (println static-var-stack)
+    (println method-declaratations)))
+
 (defn type-check [extracts]
   (let [method-extract (filter #(= (:type %) :MethodDeclaration) extracts)
         method-stack (collect-method-stack method-extract)]

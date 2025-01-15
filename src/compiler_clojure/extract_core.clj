@@ -166,11 +166,3 @@
         _ tree)
 
       (mapcat extract-class-content tree))))
-
-;; currently exists for only debug purposes
-(defn ex [tree]
-  (let [extracted (extract-class-content tree)
-        static-vars (extract-static-var-declarations extracted)
-        method-declaratations (extract-method-declaration extracted)]
-    (println static-vars)
-    (println method-declaratations)))
