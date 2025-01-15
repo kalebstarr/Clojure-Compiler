@@ -120,17 +120,17 @@
 
                _ %))))
 
-(defn methodcall-extract [node]
+(defn extract-method-return [node]
   (m/match node
     [:InstructionReturn "return" ?other]
     ?other
 
     ;; This extracts nested instructions as :InstructionReturn is nested
     [?one ?other]
-    (methodcall-extract ?other)
+    (extract-method-return ?other)
 
     [?one & ?other]
-    (methodcall-extract ?other)
+    (extract-method-return ?other)
 
     _ nil))
 
@@ -145,14 +145,14 @@
                {:method-type ?t
                 :method-name ?id
                 :params (extract-parameter-list ?params)
-                :method-return (methodcall-extract ?other)
+                :method-return (extract-method-return ?other)
                 :method-body ?other}
 
                ([:VoidMethodDeclaration "static" "void" ?id ?params [:MethodBody & ?other]])
                {:method-type "void"
                 :method-name ?id
                 :params (extract-parameter-list ?params)
-                :method-return (methodcall-extract ?other)
+                :method-return (extract-method-return ?other)
                 :method-body ?other}))))
 
 (defn extract-class-content [tree]
