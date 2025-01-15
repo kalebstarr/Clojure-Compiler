@@ -6,7 +6,8 @@
 (defn type-print-failure [token msg]
   (let [{:instaparse.gll/keys [end-line end-column]} (meta token)]
     (println (str "Type Error: Line " end-line ": Column " end-column ": " msg))
-    (System/exit 1)))
+    ;; (System/exit 1)
+    ))
 
 (declare evaluate-var)
 
@@ -256,12 +257,17 @@
       var-stack)))
 
 (defn collect-methods [extract method-stack]
-  (let [method-name (:method-name (:values extract))
-        {:keys [method-type params method-return]} (:values extract)
-        param-type (map #(second (second %)) params)
-        expected {:method-type method-type :params param-type :method-return method-return}
-        updated-method-stack (assoc method-stack method-name expected)]
-    updated-method-stack))
+  (let [method-name (:method-name extract)]
+    (if (not (contains? method-stack method-name))
+      (let [{:keys [method-type params method-return]} extract
+            param-type (map #(second (second %)) params)
+            expected {:method-type method-type,
+                      :params param-type,
+                      :method-return method-return}
+            updated-method-stack (assoc method-stack method-name expected)]
+        updated-method-stack)
+      (do (type-print-failure method-name "Invalid method declaration")
+          method-stack))))
 
 (defn collect-method-stack [method-extracts]
   (reduce
@@ -291,9 +297,11 @@
   (let [extracted (extractor/extract-class-content tree)
         static-vars (extractor/extract-static-var-declarations extracted)
         method-declaratations (extractor/extract-method-declaration extracted)
-        static-var-stack (collect-static-var-stack static-vars)]
+        
+        static-var-stack (collect-static-var-stack static-vars)
+        method-stack (collect-method-stack method-declaratations)]
     (println static-var-stack)
-    (println method-declaratations)))
+    (println method-stack)))
 
 (defn type-check [extracts]
   (let [method-extract (filter #(= (:type %) :MethodDeclaration) extracts)
