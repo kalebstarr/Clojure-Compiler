@@ -142,18 +142,34 @@
        (filter #(= :MethodDeclaration (first %)))
        (map #(m/match (rest %)
                ([:GenericMethodDeclaration "static" [:Type ?t] ?id ?params [:MethodBody & ?other]])
-               {:method-type ?t
-                :method-name ?id
-                :params (extract-parameter-list ?params)
-                :method-return (extract-method-return ?other)
+               {:method-type ?t,
+                :method-name ?id,
+                :params (extract-parameter-list ?params),
+                :method-return (extract-method-return ?other),
+                :method-body ?other}
+               
+               ([:GenericMethodDeclaration "static" [:Type ?t] ?id [:MethodBody & ?other]])
+               {:method-type ?t,
+                :method-name ?id,
+                :params nil,
+                :method-return (extract-method-return ?other),
                 :method-body ?other}
 
                ([:VoidMethodDeclaration "static" "void" ?id ?params [:MethodBody & ?other]])
-               {:method-type "void"
-                :method-name ?id
-                :params (extract-parameter-list ?params)
-                :method-return (extract-method-return ?other)
-                :method-body ?other}))))
+               {:method-type "void",
+                :method-name ?id,
+                :params (extract-parameter-list ?params),
+                :method-return (extract-method-return ?other),
+                :method-body ?other}
+               
+               ([:VoidMethodDeclaration "static" "void" ?id [:MethodBody & ?other]])
+               {:method-type "void",
+                :method-name ?id,
+                :params nil,
+                :method-return (extract-method-return ?other),
+                :method-body ?other}
+               
+               _ %))))
 
 (defn extract-class-content [tree]
   (when (sequential? tree)
