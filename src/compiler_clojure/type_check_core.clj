@@ -265,6 +265,11 @@
                       :params param-type,
                       :method-return method-return}
             updated-method-stack (assoc method-stack method-name expected)]
+        (if (= method-type "void")
+          (when (not (nil? method-return))
+            (type-print-failure method-name (str method-type " method expects no return")))
+          (when (or (nil? method-return) (empty? method-return))
+            (type-print-failure method-name (str method-type " method expects return"))))
         updated-method-stack)
       (do (type-print-failure method-name "Invalid method declaration")
           method-stack))))
@@ -297,11 +302,14 @@
   (let [extracted (extractor/extract-class-content tree)
         static-vars (extractor/extract-static-var-declarations extracted)
         method-declaratations (extractor/extract-method-declaration extracted)
-        
+
         static-var-stack (collect-static-var-stack static-vars)
         method-stack (collect-method-stack method-declaratations)]
     (println static-var-stack)
-    (println method-stack)))
+    (println method-stack)
+
+    (println method-declaratations)
+    (println (map #(:params %) method-declaratations))))
 
 (defn type-check [extracts]
   (let [method-extract (filter #(= (:type %) :MethodDeclaration) extracts)
