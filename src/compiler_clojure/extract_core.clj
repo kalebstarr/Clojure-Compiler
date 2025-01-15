@@ -67,19 +67,6 @@
     ("Console.WriteLine" ?exp)
     {:expression (extract ?exp)}
 
-    ;; :MethodDeclaration
-    ([:GenericMethodDeclaration "static" [:Type ?t] ?id ?params ?other])
-    {:method-type ?t
-     :method-name ?id
-     :params (extract ?params)
-     :method-return (methodcall-extract ?other)}
-
-    ([:VoidMethodDeclaration "static" "void" ?id ?params ?other])
-    {:method-type "void"
-     :method-name ?id
-     :params (extract ?params)
-     :method-return (methodcall-extract ?other)}
-
     [:ParameterList & ?params]
     (filter #(not= "," %) ?params)
 
