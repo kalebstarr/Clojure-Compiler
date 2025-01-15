@@ -2,20 +2,6 @@
   (:require
    [meander.epsilon :as m]))
 
-(defn methodcall-extract [node]
-  (m/match node
-    [:InstructionReturn "return" ?other]
-    ?other
-
-    ;; This extracts nested instructions as :InstructionReturn is nested
-    [?one ?other]
-    (methodcall-extract ?other)
-
-    [?one & ?other]
-    (methodcall-extract ?other)
-
-    _ nil))
-
 (defn extract [node]
   (m/match node
     ([:Type ?t] ?id "=" & ?other)
@@ -133,6 +119,20 @@
                 :static true}
 
                _ %))))
+
+(defn methodcall-extract [node]
+  (m/match node
+    [:InstructionReturn "return" ?other]
+    ?other
+
+    ;; This extracts nested instructions as :InstructionReturn is nested
+    [?one ?other]
+    (methodcall-extract ?other)
+
+    [?one & ?other]
+    (methodcall-extract ?other)
+
+    _ nil))
 
 (defn extract-parameter-list [param-list]
   (filter #(not= "," %) (rest param-list)))
