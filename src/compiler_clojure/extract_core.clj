@@ -121,18 +121,16 @@
                _ %))))
 
 (defn extract-method-return [node]
-  (m/match node
-    [:InstructionReturn "return" ?other]
-    ?other
+  (when (sequential? node)
+    (case (first node)
+      :InstructionReturn
+      (m/match node
+        [:InstructionReturn "return" ?other]
+        ?other
 
-    ;; This extracts nested instructions as :InstructionReturn is nested
-    [?one ?other]
-    (extract-method-return ?other)
+        _ node)
 
-    [?one & ?other]
-    (extract-method-return ?other)
-
-    _ nil))
+      (mapcat extract-method-return node))))
 
 (defn extract-parameter-list [param-list]
   (filter #(not= "," %) (rest param-list)))
@@ -159,14 +157,14 @@
                {:method-type "void",
                 :method-name ?id,
                 :params (extract-parameter-list ?params),
-                :method-return (extract-method-return ?other),
+                :method-return nil,
                 :method-body ?other}
                
                ([:VoidMethodDeclaration "static" "void" ?id [:MethodBody & ?other]])
                {:method-type "void",
                 :method-name ?id,
                 :params nil,
-                :method-return (extract-method-return ?other),
+                :method-return nil,
                 :method-body ?other}
                
                _ %))))
