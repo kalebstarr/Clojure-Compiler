@@ -157,14 +157,14 @@
                {:method-type "void",
                 :method-name ?id,
                 :params (extract-parameter-list ?params),
-                :method-return nil,
+                :method-return (extract-method-return ?other),
                 :method-body ?other}
                
                ([:VoidMethodDeclaration "static" "void" ?id [:MethodBody & ?other]])
                {:method-type "void",
                 :method-name ?id,
                 :params nil,
-                :method-return nil,
+                :method-return (extract-method-return ?other),
                 :method-body ?other}
                
                _ %))))

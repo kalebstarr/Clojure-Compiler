@@ -266,7 +266,7 @@
                       :method-return method-return}
             updated-method-stack (assoc method-stack method-name expected)]
         (if (= method-type "void")
-          (when (not (nil? method-return))
+          (when (not (or (nil? method-return) (empty? method-return)))
             (type-print-failure method-name (str method-type " method expects no return")))
           (when (or (nil? method-return) (empty? method-return))
             (type-print-failure method-name (str method-type " method expects return"))))
