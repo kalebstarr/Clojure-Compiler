@@ -85,6 +85,11 @@
                 :values (extract (rest node))}]
               (mapcat extract-info (rest node)))
 
+      :ElseBlock
+      (concat [{:type :ElseBlock
+                :values (extract (rest node))}]
+              (mapcat extract-info (rest node)))
+
       :WhileBlock
       (concat [{:type :WhileBlock
                 :values (extract (rest node))}]
@@ -92,11 +97,6 @@
 
       :ConsoleWrite
       (concat [{:type :ConsoleWrite
-                :values (extract (rest node))}]
-              (mapcat extract-info (rest node)))
-
-      :MethodDeclaration
-      (concat [{:type :MethodDeclaration
                 :values (extract (rest node))}]
               (mapcat extract-info (rest node)))
 
