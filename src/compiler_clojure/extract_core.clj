@@ -14,13 +14,18 @@
     {:varname ?id,
      :expression (extract ?other)}
 
-    ("if" ?exp _)
+    ("if" ?exp ?instruction)
     {:vartype "bool",
-     :expression (extract ?exp)}
+     :expression (extract ?exp)
+     :instruction ?instruction}
+    
+    ("else" ?instruction)
+    {:instruction ?instruction}
 
-    ("while" ?exp _)
+    ("while" ?exp ?instruction)
     {:vartype "bool"
-     :expression (extract ?exp)}
+     :expression (extract ?exp)
+     :instruction ?instruction}
 
     ("return" ?exp)
     {:expression (extract ?exp)}
