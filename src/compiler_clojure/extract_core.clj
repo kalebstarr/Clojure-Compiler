@@ -144,28 +144,28 @@
   (->> node
        (filter #(= :MethodDeclaration (first %)))
        (map #(m/match (rest %)
-               ([:GenericMethodDeclaration "static" [:Type ?t] ?id ?params [:MethodBody & ?other]])
+               ([:GenericMethodDeclaration "static" [:Type ?t] ?id ?params [:InstructionBlock & ?other]])
                {:method-type ?t,
                 :method-name ?id,
                 :params (extract-parameter-list ?params),
                 :method-return (extract-method-return ?other),
                 :method-body ?other}
                
-               ([:GenericMethodDeclaration "static" [:Type ?t] ?id [:MethodBody & ?other]])
+               ([:GenericMethodDeclaration "static" [:Type ?t] ?id [:InstructionBlock & ?other]])
                {:method-type ?t,
                 :method-name ?id,
                 :params nil,
                 :method-return (extract-method-return ?other),
                 :method-body ?other}
 
-               ([:VoidMethodDeclaration "static" "void" ?id ?params [:MethodBody & ?other]])
+               ([:VoidMethodDeclaration "static" "void" ?id ?params [:InstructionBlock & ?other]])
                {:method-type "void",
                 :method-name ?id,
                 :params (extract-parameter-list ?params),
                 :method-return (extract-method-return ?other),
                 :method-body ?other}
                
-               ([:VoidMethodDeclaration "static" "void" ?id [:MethodBody & ?other]])
+               ([:VoidMethodDeclaration "static" "void" ?id [:InstructionBlock & ?other]])
                {:method-type "void",
                 :method-name ?id,
                 :params nil,

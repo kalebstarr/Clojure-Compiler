@@ -13,9 +13,8 @@
     ClassDeclaration = 'class' Space Identifier <LeftBracket> (StaticVariableDeclaration)* MethodDeclaration+ <RightBracket>
 
     MethodDeclaration = GenericMethodDeclaration | VoidMethodDeclaration
-    GenericMethodDeclaration = 'static' Space Type Identifier <LeftParen> ParameterList? <RightParen> MethodBody
-    VoidMethodDeclaration = 'static' Space 'void' Space Identifier <LeftParen> ParameterList? <RightParen> MethodBody
-    MethodBody = <LeftBracket> (Instruction)* <RightBracket>
+    GenericMethodDeclaration = 'static' Space Type Identifier <LeftParen> ParameterList? <RightParen> InstructionBlock
+    VoidMethodDeclaration = 'static' Space 'void' Space Identifier <LeftParen> ParameterList? <RightParen> InstructionBlock
     ParameterList = Parameter (',' Parameter)*
     Parameter = Type Identifier
 
