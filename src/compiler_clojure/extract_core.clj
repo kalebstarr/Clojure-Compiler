@@ -8,55 +8,55 @@
     nil
 
     [:Instruction ?other]
-    [(extract ?other)]
+    (extract ?other)
 
     [:VariableDeclaration [:Type ?t] ?id "=" ?expr]
-    [:type :VariableDeclaration,
-     :values {:vartype ?t,
-              :varname ?id,
-              :expression ?expr}]
+    [{:type :VariableDeclaration,
+      :values {:vartype ?t,
+               :varname ?id,
+               :expression ?expr}}]
 
     [:VariableAssignment ?id "=" ?expr]
-    [:type :VariableAssignment,
-     :values {:varname ?id,
-              :expression ?expr}]
+    [{:type :VariableAssignment,
+      :values {:varname ?id,
+               :expression ?expr}}]
 
     [:IfElseBlock ?if ?else]
     (vec (concat (extract ?if) (extract ?else)))
 
     [:IfBlock "if" ?expr ?instruction]
-    [:type :IfBlock,
-     :values {:vartype "bool",
-              :expression ?expr,
-              :instruction ?instruction}]
+    [{:type :IfBlock,
+      :values {:vartype "bool",
+               :expression ?expr,
+               :instruction ?instruction}}]
 
     [:ElseBlock "else" ?instruction]
-    [:type :ElseBlock,
-     :values {:instruction ?instruction}]
+    [{:type :ElseBlock,
+      :values {:instruction ?instruction}}]
 
     [:WhileBlock "while" ?expr ?instruction]
-    [:type :WhileBlock,
-     :values {:vartype "bool",
-              :expression ?expr,
-              :instruction ?instruction}]
+    [{:type :WhileBlock,
+      :values {:vartype "bool",
+               :expression ?expr,
+               :instruction ?instruction}}]
 
     [:InstructionReturn "return" ?expr]
-    [:type :InstructionReturn,
-     :values {:expression ?expr}]
+    [{:type :InstructionReturn,
+      :values {:expression ?expr}}]
 
     [:ConsoleWrite "Console.WriteLine" ?expr]
-    [:type :InstructionReturn,
-     :values {:expression ?expr}]
+    [{:type :ConsoleWrite,
+      :values {:expression ?expr}}]
 
     [:MethodCall ?id [:LeftParen ?x] ?other [:RightParen ?y]]
-    [:type :MethodCall,
-     :values {:name ?id,
-              :arguments ?other}]
+    [{:type :MethodCall,
+      :values {:name ?id,
+               :arguments ?other}}]
 
     [:MethodCall ?id [:LeftParen ?x] [:RightParen ?y]]
-    [:type :MethodCall,
-     :values {:name ?id,
-              :arguments nil}]
+    [{:type :MethodCall,
+      :values {:name ?id,
+               :arguments nil}}]
 
     _ node))
 

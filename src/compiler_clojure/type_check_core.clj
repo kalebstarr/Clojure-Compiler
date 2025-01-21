@@ -306,12 +306,14 @@
         static-vars (extractor/extract-static-var-declarations extracted)
         method-declaratations (extractor/extract-method-declaration extracted)
 
+        extracted-method-bodies (map #(mapcat-method-extract (:method-body %)) method-declaratations)
+
         static-var-stack (collect-static-var-stack static-vars)
         method-stack (collect-method-stack method-declaratations)]
     (println static-var-stack)
     (println method-stack)
 
-    (println (map #(mapcat-method-extract (:method-body %)) method-declaratations))
+    extracted-method-bodies
 
     ;; (println method-declaratations)
     ;; (println (map #(:params %) method-declaratations))
