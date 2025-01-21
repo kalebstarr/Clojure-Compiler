@@ -233,7 +233,7 @@
       :MethodCall
       (let [{:keys [name arguments]} extract
             filtered-arguments (filter #(not= "," %) arguments)
-            extracted-arguments (map extractor/extract filtered-arguments)]
+            extracted-arguments (map extractor/extract-expression filtered-arguments)]
         (if (contains? method-stack name)
           (if (= (count (:params (get method-stack name))) (count extracted-arguments))
             (let [pairs (map vector (:params (get method-stack name)) extracted-arguments)]

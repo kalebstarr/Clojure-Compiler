@@ -15,6 +15,13 @@
 
     _ expr))
 
+(defn extract-arguments [arguments]
+  (m/match arguments
+    [:Arguments & ?other]
+    ?other
+
+    _ arguments))
+
 (defn extract [node]
   (m/match node
     [:Instruction]
@@ -24,7 +31,7 @@
     (extract ?other)
 
     [:VariableDeclaration [:Type ?t] ?id "=" ?expr]
-    [{:type :VariableDeclaration, 
+    [{:type :VariableDeclaration,
       :vartype ?t,
       :varname ?id,
       :expression (extract-expression ?expr)}]
@@ -55,7 +62,7 @@
       :vartype "bool",
       :expression (extract-expression ?expr),
       :instruction ?instruction}]
-    
+
     [:InstructionBlock & ?instructions]
     [{:type :InstructionBlock,
       :instructions ?instructions}]
@@ -71,7 +78,7 @@
     [:MethodCall ?id [:LeftParen ?x] ?other [:RightParen ?y]]
     [{:type :MethodCall,
       :name ?id,
-      :arguments ?other}]
+      :arguments (extract-arguments ?other)}]
 
     [:MethodCall ?id [:LeftParen ?x] [:RightParen ?y]]
     [{:type :MethodCall,
