@@ -39,6 +39,10 @@
       :values {:vartype "bool",
                :expression ?expr,
                :instruction ?instruction}}]
+    
+    [:InstructionBlock & ?instructions]
+    [{:type :InstructionBlock,
+      :values {:instructions ?instructions}}]
 
     [:InstructionReturn "return" ?expr]
     [{:type :InstructionReturn,
