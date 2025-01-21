@@ -2,6 +2,19 @@
   (:require
    [meander.epsilon :as m]))
 
+(defn extract-expression [expr]
+  (m/match expr
+    [:Expression & ?other]
+    (extract-expression ?other)
+
+    [[:Expression & ?nested-exp] & ?other]
+    (concat (extract ?nested-exp) (extract ?other))
+
+    [?one & ?other]
+    (concat [?one] (extract-expression ?other))
+
+    _ expr))
+
 (defn extract [node]
   (m/match node
     [:Instruction]
@@ -14,12 +27,12 @@
     [{:type :VariableDeclaration, 
       :vartype ?t,
       :varname ?id,
-      :expression ?expr}]
+      :expression (extract-expression ?expr)}]
 
     [:VariableAssignment ?id "=" ?expr]
     [{:type :VariableAssignment,
       :varname ?id,
-      :expression ?expr}]
+      :expression (extract-expression ?expr)}]
 
     [:IfElseBlock ?if ?else]
     (vec (concat (extract ?if) (extract ?else)))
@@ -27,7 +40,7 @@
     [:IfBlock "if" ?expr ?instruction]
     [{:type :IfBlock,
       :vartype "bool",
-      :expression ?expr,
+      :expression (extract-expression ?expr),
       :instruction ?instruction}]
 
     [:ElseBlock "else" ?instruction]
@@ -37,7 +50,7 @@
     [:WhileBlock "while" ?expr ?instruction]
     [{:type :WhileBlock,
       :vartype "bool",
-      :expression ?expr,
+      :expression (extract-expression ?expr),
       :instruction ?instruction}]
     
     [:InstructionBlock & ?instructions]
@@ -46,11 +59,11 @@
 
     [:InstructionReturn "return" ?expr]
     [{:type :InstructionReturn,
-      :expression ?expr}]
+      :expression (extract-expression ?expr)}]
 
     [:ConsoleWrite "Console.WriteLine" ?expr]
     [{:type :ConsoleWrite,
-      :expression ?expr}]
+      :expression (extract-expression ?expr)}]
 
     [:MethodCall ?id [:LeftParen ?x] ?other [:RightParen ?y]]
     [{:type :MethodCall,
