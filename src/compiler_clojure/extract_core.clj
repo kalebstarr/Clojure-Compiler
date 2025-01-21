@@ -8,7 +8,7 @@
     (extract-expression ?other)
 
     [[:Expression & ?nested-exp] & ?other]
-    (concat (extract ?nested-exp) (extract ?other))
+    (concat (extract-expression ?nested-exp) (extract-expression ?other))
 
     [?one & ?other]
     (concat [?one] (extract-expression ?other))
@@ -36,6 +36,9 @@
 
     [:IfElseBlock ?if ?else]
     (vec (concat (extract ?if) (extract ?else)))
+
+    [:IfElseBlock ?if]
+    (extract ?if)
 
     [:IfBlock "if" ?expr ?instruction]
     [{:type :IfBlock,
