@@ -21,7 +21,8 @@
      :values {:varname ?id,
               :expression ?expr}]
 
-    ;; IfElseBlock that redirects to separate IfBlock and ElseBlock extraction
+    [:IfElseBlock ?if ?else]
+    (vec (concat (extract ?if) (extract ?else)))
 
     [:IfBlock "if" ?expr ?instruction]
     [:type :IfBlock,
