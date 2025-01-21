@@ -297,8 +297,8 @@
    {}
    static-vars))
 
-(defn mapcat-method-extract [method-body]
-  (mapcat #(extractor/extract %) method-body))
+(defn mapcat-instruction-block-extract [instruction-body]
+  (mapcat #(extractor/extract %) instruction-body))
 
 ;; currently exists for only debug purposes
 (defn ex [tree]
@@ -306,14 +306,14 @@
         static-vars (extractor/extract-static-var-declarations extracted)
         method-declaratations (extractor/extract-method-declaration extracted)
 
-        extracted-method-bodies (map #(mapcat-method-extract (:method-body %)) method-declaratations)
+        extracted-method-bodies (map #(mapcat-instruction-block-extract (:method-body %)) method-declaratations)
 
         static-var-stack (collect-static-var-stack static-vars)
         method-stack (collect-method-stack method-declaratations)]
     (println static-var-stack)
     (println method-stack)
 
-    extracted-method-bodies
+    (map (fn [x] (map #(:type %) x)) extracted-method-bodies)
 
     ;; (println method-declaratations)
     ;; (println (map #(:params %) method-declaratations))
