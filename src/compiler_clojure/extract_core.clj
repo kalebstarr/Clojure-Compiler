@@ -59,52 +59,6 @@
 
     _ node))
 
-(defn extract-info [node]
-  (if (sequential? node)
-    (case (first node)
-      :VariableDeclaration
-      (concat [{:type :VariableDeclaration
-                :values (extract (rest node))}]
-              (mapcat extract-info (rest node)))
-
-      :VariableAssignment
-      (concat [{:type :VariableAssignment
-                :values (extract (rest node))}]
-              (mapcat extract-info (rest node)))
-
-      :InstructionReturn
-      (concat [{:type :InstructionReturn
-                :values (extract (rest node))}]
-              (mapcat extract-info (rest node)))
-
-      :IfBlock
-      (concat [{:type :IfBlock
-                :values (extract (rest node))}]
-              (mapcat extract-info (rest node)))
-
-      :ElseBlock
-      (concat [{:type :ElseBlock
-                :values (extract (rest node))}]
-              (mapcat extract-info (rest node)))
-
-      :WhileBlock
-      (concat [{:type :WhileBlock
-                :values (extract (rest node))}]
-              (mapcat extract-info (rest node)))
-
-      :ConsoleWrite
-      (concat [{:type :ConsoleWrite
-                :values (extract (rest node))}]
-              (mapcat extract-info (rest node)))
-
-      :MethodCall
-      (concat [{:type :MethodCall
-                :values (extract (rest node))}]
-              (mapcat extract-info (rest node)))
-
-      (mapcat extract-info node))
-    []))
-
 (defn extract-static-var-declarations [node]
   (->> node
        (filter #(= :StaticVariableDeclaration (first %)))
