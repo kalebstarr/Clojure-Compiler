@@ -1,69 +1,61 @@
-(ns compiler-clojure.extract-core 
+(ns compiler-clojure.extract-core
   (:require
    [meander.epsilon :as m]))
 
 (defn extract [node]
   (m/match node
-    ([:Type ?t] ?id "=" & ?other)
-    {:vartype ?t,
-     :varname ?id,
-     :expression (extract ?other),
-     :static false}
+    [:Instruction]
+    nil
 
-    (?id "=" & ?other)
-    {:varname ?id,
-     :expression (extract ?other)}
+    [:Instruction ?other]
+    [(extract ?other)]
 
-    ("if" ?exp ?instruction)
-    {:vartype "bool",
-     :expression (extract ?exp)
-     :instruction ?instruction}
-    
-    ("else" ?instruction)
-    {:instruction ?instruction}
+    [:VariableDeclaration [:Type ?t] ?id "=" ?expr]
+    [:type :VariableDeclaration,
+     :values {:vartype ?t,
+              :varname ?id,
+              :expression ?expr}]
 
-    ("while" ?exp ?instruction)
-    {:vartype "bool"
-     :expression (extract ?exp)
-     :instruction ?instruction}
+    [:VariableAssignment ?id "=" ?expr]
+    [:type :VariableAssignment,
+     :values {:varname ?id,
+              :expression ?expr}]
 
-    ("return" ?exp)
-    {:expression (extract ?exp)}
+    ;; IfElseBlock that redirects to separate IfBlock and ElseBlock extraction
 
-    ;; :MethodCall with arguments
-    (?id [:LeftParen ?x] ?other [:RightParen ?y])
-    {:name ?id,
-     :arguments (extract ?other)}
+    [:IfBlock "if" ?expr ?instruction]
+    [:type :IfBlock,
+     :values {:vartype "bool",
+              :expression ?expr,
+              :instruction ?instruction}]
 
-    ;; :MethodCall without arguments
-    (?id [:LeftParen ?x] [:RightParen ?y])
-    {:name ?id
-     :arguments nil}
+    [:ElseBlock "else" ?instruction]
+    [:type :ElseBlock,
+     :values {:instruction ?instruction}]
 
-    [:Arguments & ?other]
-    ?other
+    [:WhileBlock "while" ?expr ?instruction]
+    [:type :WhileBlock,
+     :values {:vartype "bool",
+              :expression ?expr,
+              :instruction ?instruction}]
 
-    ;; Expr in :VarDec and :VarAssign
-    ([:Expression & ?other])
-    (extract ?other)
+    [:InstructionReturn "return" ?expr]
+    [:type :InstructionReturn,
+     :values {:expression ?expr}]
 
-    ;; Nested Expr in :VarDec and :VarAssign
-    [[:Expression & ?nested-exp] & ?other]
-    (concat (extract ?nested-exp) (extract ?other))
+    [:ConsoleWrite "Console.WriteLine" ?expr]
+    [:type :InstructionReturn,
+     :values {:expression ?expr}]
 
-    ;; Expr in :IfBlock, :WhileBlock and :ConsoleWrite
-    [:Expression & ?other]
-    (extract ?other)
+    [:MethodCall ?id [:LeftParen ?x] ?other [:RightParen ?y]]
+    [:type :MethodCall,
+     :values {:name ?id,
+              :arguments ?other}]
 
-    ("Console.WriteLine" ?exp)
-    {:expression (extract ?exp)}
-
-    [?one & ?other]
-    (concat [?one] (extract ?other))
-
-    ;; :MethodCall without any arguments
-    ([:Identifier ?id])
-    {:name ?id}
+    [:MethodCall ?id [:LeftParen ?x] [:RightParen ?y]]
+    [:type :MethodCall,
+     :values {:name ?id,
+              :arguments nil}]
 
     _ node))
 
@@ -150,7 +142,7 @@
                 :params (extract-parameter-list ?params),
                 :method-return (extract-method-return ?other),
                 :method-body ?other}
-               
+
                ([:GenericMethodDeclaration "static" [:Type ?t] ?id [:InstructionBlock & ?other]])
                {:method-type ?t,
                 :method-name ?id,
@@ -164,14 +156,14 @@
                 :params (extract-parameter-list ?params),
                 :method-return (extract-method-return ?other),
                 :method-body ?other}
-               
+
                ([:VoidMethodDeclaration "static" "void" ?id [:InstructionBlock & ?other]])
                {:method-type "void",
                 :method-name ?id,
                 :params nil,
                 :method-return (extract-method-return ?other),
                 :method-body ?other}
-               
+
                _ %))))
 
 (defn extract-class-content [tree]

@@ -313,8 +313,9 @@
 
     (println (map #(mapcat-method (:method-body %)) method-declaratations))
 
-    (println method-declaratations)
-    (println (map #(:params %) method-declaratations))))
+    ;; (println method-declaratations)
+    ;; (println (map #(:params %) method-declaratations))
+    ))
 
 (defn type-check [extracts]
   (let [method-extract (filter #(= (:type %) :MethodDeclaration) extracts)
