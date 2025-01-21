@@ -14,7 +14,7 @@
 (defn evaluate-method [expected extract var-stack method-stack]
   (let [token (first extract)
         rest-expr (rest extract)
-        method-call (first (extractor/extract-info token))
+        method-call (first (extractor/extract token))
         {:keys [name]} (:values method-call)]
     (when (contains? method-stack name)
       (case expected
@@ -192,15 +192,14 @@
           var-stack
           pairs))
 
-;; Add variable scope
 (defn evaluate [extract var-stack method-stack]
-  (let [expression (:expression (:values extract))
+  (let [expression (:expression extract)
         type (:type extract)]
     (case type
       :VariableDeclaration
-      (let [varname (:varname (:values extract))]
+      (let [varname (:varname extract)]
         (if (not (contains? var-stack varname))
-          (let [expected (:vartype (:values extract))
+          (let [expected (:vartype extract)
                 updated-var-stack (assoc var-stack varname expected)]
             (evaluate-var expected expression updated-var-stack method-stack)
             updated-var-stack)
@@ -208,7 +207,7 @@
               var-stack)))
 
       :VariableAssignment
-      (let [varname (:varname (:values extract))]
+      (let [varname (:varname extract)]
         (if (contains? var-stack varname)
           (let [expected (get var-stack varname)
                 updated-var-stack (evaluate-var expected expression var-stack method-stack)]
@@ -217,12 +216,12 @@
               var-stack)))
 
       :IfBlock
-      (let [expected (:vartype (:values extract))]
+      (let [expected (:vartype extract)]
         (evaluate-var expected expression var-stack method-stack)
         var-stack)
 
       :WhileBlock
-      (let [expected (:vartype (:values extract))]
+      (let [expected (:vartype extract)]
         (evaluate-var expected expression var-stack method-stack)
         var-stack)
 
@@ -232,7 +231,7 @@
         var-stack)
 
       :MethodCall
-      (let [{:keys [name arguments]} (:values extract)
+      (let [{:keys [name arguments]} extract
             filtered-arguments (filter #(not= "," %) arguments)
             extracted-arguments (map extractor/extract filtered-arguments)]
         (if (contains? method-stack name)
@@ -241,17 +240,6 @@
               (evaluate-methodcall pairs var-stack method-stack))
             (type-print-failure name (str "Wrong amount of arguments in method call '" (last name) "'")))
           (type-print-failure name (str "Method '" (last name) "' has not been declared")))
-        var-stack)
-
-      ;; This includes checking for :InstructionReturn as they are bound
-      :MethodDeclaration
-      (let [{:keys [method-type method-name method-return]} (:values extract)]
-        (if (= method-type "void")
-          (when (not= method-return nil)
-            (type-print-failure method-name (str method-type " method expects no return")))
-          (if (nil? method-return)
-            (type-print-failure method-name (str method-type " method expects return"))
-            (evaluate-var method-type (extractor/extract method-return) var-stack method-stack)))
         var-stack)
 
       var-stack)))
@@ -300,6 +288,13 @@
 (defn mapcat-instruction-block-extract [instruction-body]
   (mapcat #(extractor/extract %) instruction-body))
 
+(defn type-check [extracts var-stack method-stack]
+  (reduce
+   (fn [var-stack extract]
+     (evaluate extract var-stack method-stack))
+   var-stack
+   extracts))
+
 ;; currently exists for only debug purposes
 (defn ex [tree]
   (let [extracted (extractor/extract-class-content tree)
@@ -310,20 +305,5 @@
 
         static-var-stack (collect-static-var-stack static-vars)
         method-stack (collect-method-stack method-declaratations)]
-    (println static-var-stack)
-    (println method-stack)
 
-    (map (fn [x] (map #(:type %) x)) extracted-method-bodies)
-
-    ;; (println method-declaratations)
-    ;; (println (map #(:params %) method-declaratations))
-    ))
-
-(defn type-check [extracts]
-  (let [method-extract (filter #(= (:type %) :MethodDeclaration) extracts)
-        method-stack (collect-method-stack method-extract)]
-    (reduce
-     (fn [var-stack extract]
-       (evaluate extract var-stack method-stack))
-     {}
-     extracts)))
+    (map #(type-check % static-var-stack method-stack) extracted-method-bodies)))
