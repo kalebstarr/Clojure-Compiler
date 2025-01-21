@@ -290,15 +290,15 @@
       (do (type-print-failure varname "Invalid variable declaration")
           var-stack))))
 
-(defn mapcat-method [method-body]
-  (mapcat #(extractor/extract %) method-body))
-
 (defn collect-static-var-stack [static-vars]
   (reduce
    (fn [var-stack extract]
      (collect-static-vars extract var-stack))
    {}
    static-vars))
+
+(defn mapcat-method-extract [method-body]
+  (mapcat #(extractor/extract %) method-body))
 
 ;; currently exists for only debug purposes
 (defn ex [tree]
@@ -311,7 +311,7 @@
     (println static-var-stack)
     (println method-stack)
 
-    (println (map #(mapcat-method (:method-body %)) method-declaratations))
+    (println (map #(mapcat-method-extract (:method-body %)) method-declaratations))
 
     ;; (println method-declaratations)
     ;; (println (map #(:params %) method-declaratations))
