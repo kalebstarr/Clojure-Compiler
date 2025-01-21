@@ -15,7 +15,7 @@
   (let [token (first extract)
         rest-expr (rest extract)
         method-call (first (extractor/extract token))
-        {:keys [name]} (:values method-call)]
+        {:keys [name]} method-call]
     (when (contains? method-stack name)
       (case expected
         "int"
