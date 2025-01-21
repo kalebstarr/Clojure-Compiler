@@ -192,6 +192,8 @@
           var-stack
           pairs))
 
+(declare mapcat-instruction-block-extract type-check)
+
 (defn evaluate [extract var-stack method-stack]
   (let [expression (:expression extract)
         type (:type extract)]
@@ -220,10 +222,26 @@
         (evaluate-var expected expression var-stack method-stack)
         var-stack)
 
+      ;; :ElseBlock
+      ;; (let [expected (:vartype extract)]
+      ;;   (evaluate-var expected expression var-stack method-stack)
+      ;;   var-stack)
+
       :WhileBlock
       (let [expected (:vartype extract)]
         (evaluate-var expected expression var-stack method-stack)
         var-stack)
+
+      :InstructionBlock
+      (let [instructions (:instructions extract)]
+        (doseq [instr (mapcat-instruction-block-extract instructions)]
+          (evaluate instr var-stack method-stack))
+        var-stack)
+
+      ;; :InstructionReturn
+      ;; (let [expected (:vartype extract)]
+      ;;   (evaluate-var expected expression var-stack method-stack)
+      ;;   var-stack)
 
       :ConsoleWrite
       (let [expected "ConsoleWrite"]
