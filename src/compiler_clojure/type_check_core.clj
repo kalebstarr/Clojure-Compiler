@@ -318,9 +318,18 @@
    var-stack
    extracts))
 
-(defn type-check-method-declaration [method-declaratation var-stack method-stack]
-  (let [{:keys [params method-body]} method-declaratation]
-    (type-check method-body var-stack method-stack)))
+(defn type-check-method-declaration [method-declaration var-stack method-stack]
+  (let [{:keys [params method-body]} method-declaration
+        updated-var-stack
+        (if (seq params)
+          (reduce
+           (fn [acc p]
+             (let [[varname vartype] (extractor/extract-parameter p)]
+               (assoc acc varname vartype)))
+           var-stack
+           params)
+          var-stack)]
+    (type-check method-body updated-var-stack method-stack)))
 
 ;; currently exists for only debug purposes
 (defn ex [tree]

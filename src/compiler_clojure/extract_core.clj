@@ -119,6 +119,13 @@
 (defn extract-parameter-list [param-list]
   (filter #(not= "," %) (rest param-list)))
 
+(defn extract-parameter [parameter]
+  (m/match parameter
+    [:Parameter [:Type ?t] ?name]
+    [?name, ?t]
+
+    _ parameter))
+
 (defn extract-method-declaration [node]
   (->> node
        (filter #(= :MethodDeclaration (first %)))
