@@ -233,9 +233,9 @@
         var-stack)
 
       :InstructionBlock
-      (let [instructions (:instructions extract)]
-        (doseq [instr (mapcat-instruction-block-extract instructions)]
-          (evaluate instr var-stack method-stack))
+      (let [instructions (:instructions extract)
+            instr (mapcat-instruction-block-extract instructions)]
+        (type-check instr var-stack method-stack)
         var-stack)
 
       ;; :InstructionReturn
@@ -324,4 +324,5 @@
         static-var-stack (collect-static-var-stack static-vars)
         method-stack (collect-method-stack method-declaratations)]
 
-    (map #(type-check % static-var-stack method-stack) extracted-method-bodies)))
+    (doseq [body extracted-method-bodies]
+      (type-check body static-var-stack method-stack))))
