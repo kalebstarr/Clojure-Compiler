@@ -22,6 +22,8 @@
 
     _ arguments))
 
+(declare mapcat-instruction-block-extract)
+
 (defn extract [node]
   (m/match node
     [:Instruction]
@@ -51,21 +53,21 @@
     [{:type :IfBlock,
       :vartype "bool",
       :expression (extract-expression ?expr),
-      :instruction ?instruction}]
+      :instruction (extract ?instruction)}]
 
     [:ElseBlock "else" ?instruction]
     [{:type :ElseBlock,
-      :instruction ?instruction}]
+      :instruction (extract ?instruction)}]
 
     [:WhileBlock "while" ?expr ?instruction]
     [{:type :WhileBlock,
       :vartype "bool",
       :expression (extract-expression ?expr),
-      :instruction ?instruction}]
+      :instruction (extract ?instruction)}]
 
     [:InstructionBlock & ?instructions]
     [{:type :InstructionBlock,
-      :instructions ?instructions}]
+      :instructions (mapcat-instruction-block-extract ?instructions)}]
 
     [:InstructionReturn "return" ?expr]
     [{:type :InstructionReturn,
@@ -86,6 +88,9 @@
       :arguments nil}]
 
     _ node))
+
+(defn mapcat-instruction-block-extract [instruction-body]
+  (mapcat #(extract %) instruction-body))
 
 (defn extract-static-var-declarations [node]
   (->> node
@@ -123,28 +128,28 @@
                 :method-name ?id,
                 :params (extract-parameter-list ?params),
                 :method-return (extract-method-return ?other),
-                :method-body ?other}
+                :method-body (mapcat-instruction-block-extract ?other)}
 
                ([:GenericMethodDeclaration "static" [:Type ?t] ?id [:InstructionBlock & ?other]])
                {:method-type ?t,
                 :method-name ?id,
                 :params nil,
                 :method-return (extract-method-return ?other),
-                :method-body ?other}
+                :method-body (mapcat-instruction-block-extract ?other)}
 
                ([:VoidMethodDeclaration "static" "void" ?id ?params [:InstructionBlock & ?other]])
                {:method-type "void",
                 :method-name ?id,
                 :params (extract-parameter-list ?params),
                 :method-return (extract-method-return ?other),
-                :method-body ?other}
+                :method-body (mapcat-instruction-block-extract ?other)}
 
                ([:VoidMethodDeclaration "static" "void" ?id [:InstructionBlock & ?other]])
                {:method-type "void",
                 :method-name ?id,
                 :params nil,
                 :method-return (extract-method-return ?other),
-                :method-body ?other}
+                :method-body (mapcat-instruction-block-extract ?other)}
 
                _ %))))
 

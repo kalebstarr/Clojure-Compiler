@@ -192,7 +192,7 @@
           var-stack
           pairs))
 
-(declare mapcat-instruction-block-extract type-check)
+(declare type-check)
 
 (defn evaluate [extract var-stack method-stack]
   (let [expression (:expression extract)
@@ -219,35 +219,31 @@
 
       :IfBlock
       (let [expected (:vartype extract)
-            instruction (:instruction extract)
-            extracted-instruction (extractor/extract instruction)]
+            instruction (:instruction extract)]
         (evaluate-var expected expression var-stack method-stack)
-        (type-check extracted-instruction var-stack method-stack)
+        (type-check instruction var-stack method-stack)
 
         var-stack)
 
       :ElseBlock
       (let [expected (:vartype extract)
-            instruction (:instruction extract)
-            extracted-instruction (extractor/extract instruction)]
+            instruction (:instruction extract)]
         (evaluate-var expected expression var-stack method-stack)
-        (type-check extracted-instruction var-stack method-stack)
+        (type-check instruction var-stack method-stack)
 
         var-stack)
 
       :WhileBlock
       (let [expected (:vartype extract)
-            instruction (:instruction extract)
-            extracted-instruction (extractor/extract instruction)]
+            instruction (:instruction extract)]
         (evaluate-var expected expression var-stack method-stack)
-        (type-check extracted-instruction var-stack method-stack)
+        (type-check instruction var-stack method-stack)
 
         var-stack)
 
       :InstructionBlock
-      (let [instructions (:instructions extract)
-            instr (mapcat-instruction-block-extract instructions)]
-        (type-check instr var-stack method-stack)
+      (let [instructions (:instructions extract)]
+        (type-check instructions var-stack method-stack)
         var-stack)
 
       ;; :InstructionReturn
@@ -315,9 +311,6 @@
    {}
    static-vars))
 
-(defn mapcat-instruction-block-extract [instruction-body]
-  (mapcat #(extractor/extract %) instruction-body))
-
 (defn type-check [extracts var-stack method-stack]
   (reduce
    (fn [var-stack extract]
@@ -325,16 +318,18 @@
    var-stack
    extracts))
 
+(defn type-check-method-declaration [method-declaratation var-stack method-stack]
+  (let [{:keys [params method-body]} method-declaratation]
+    (type-check method-body var-stack method-stack)))
+
 ;; currently exists for only debug purposes
 (defn ex [tree]
   (let [extracted (extractor/extract-class-content tree)
         static-vars (extractor/extract-static-var-declarations extracted)
         method-declaratations (extractor/extract-method-declaration extracted)
 
-        extracted-method-bodies (map #(mapcat-instruction-block-extract (:method-body %)) method-declaratations)
-
         static-var-stack (collect-static-var-stack static-vars)
         method-stack (collect-method-stack method-declaratations)]
 
-    (doseq [body extracted-method-bodies]
-      (type-check body static-var-stack method-stack))))
+    (doseq [declaration method-declaratations]
+      (type-check-method-declaration declaration static-var-stack method-stack))))
