@@ -4,7 +4,6 @@
    [clojure.tools.cli :refer [parse-opts]]
    [compiler-clojure.parser-core :as parser]
    [instaparse.core :as insta]
-   [compiler-clojure.extract-core :as extractor]
    [compiler-clojure.type-check-core :as checker])
   (:gen-class))
 
@@ -56,10 +55,7 @@
                     (read-file)
                     (parser/parse-content)
                     (transform-parsed)
-                    ;; (extractor/extract-info)
-                    ;; (checker/type-check)
-                    (checker/ex)
-                    )
+                    (checker/check))
       :debug (do
                (println message)
                (parser/parser-debug (read-file file))))))

@@ -331,14 +331,11 @@
           var-stack)]
     (type-check method-body updated-var-stack method-stack)))
 
-;; currently exists for only debug purposes
-(defn ex [tree]
+(defn check [tree]
   (let [extracted (extractor/extract-class-content tree)
-        static-vars (extractor/extract-static-var-declarations extracted)
-        method-declaratations (extractor/extract-method-declaration extracted)
-
-        static-var-stack (collect-static-var-stack static-vars)
-        method-stack (collect-method-stack method-declaratations)]
-
-    (doseq [declaration method-declaratations]
-      (type-check-method-declaration declaration static-var-stack method-stack))))
+        static-var-stack (collect-static-var-stack
+                          (extractor/extract-static-var-declarations extracted))
+        method-declarations (extractor/extract-method-declaration extracted)
+        method-stack (collect-method-stack method-declarations)]
+    (doseq [decl method-declarations]
+      (type-check-method-declaration decl static-var-stack method-stack))))
