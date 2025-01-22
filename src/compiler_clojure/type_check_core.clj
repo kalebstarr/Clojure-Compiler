@@ -218,18 +218,30 @@
               var-stack)))
 
       :IfBlock
-      (let [expected (:vartype extract)]
+      (let [expected (:vartype extract)
+            instruction (:instruction extract)
+            extracted-instruction (extractor/extract instruction)]
         (evaluate-var expected expression var-stack method-stack)
+        (type-check extracted-instruction var-stack method-stack)
+
         var-stack)
 
-      ;; :ElseBlock
-      ;; (let [expected (:vartype extract)]
-      ;;   (evaluate-var expected expression var-stack method-stack)
-      ;;   var-stack)
+      :ElseBlock
+      (let [expected (:vartype extract)
+            instruction (:instruction extract)
+            extracted-instruction (extractor/extract instruction)]
+        (evaluate-var expected expression var-stack method-stack)
+        (type-check extracted-instruction var-stack method-stack)
+
+        var-stack)
 
       :WhileBlock
-      (let [expected (:vartype extract)]
+      (let [expected (:vartype extract)
+            instruction (:instruction extract)
+            extracted-instruction (extractor/extract instruction)]
         (evaluate-var expected expression var-stack method-stack)
+        (type-check extracted-instruction var-stack method-stack)
+
         var-stack)
 
       :InstructionBlock
