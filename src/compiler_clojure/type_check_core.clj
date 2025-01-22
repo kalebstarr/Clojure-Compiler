@@ -144,7 +144,7 @@
                           (evaluate-var "comparison" rest-expr var-stack method-stack)
                           (type-print-failure token "Expected a comparison operator after identifier"))
             :MethodCall (evaluate-method expected expression var-stack method-stack)
-            (println "Invalid arithmetic expression in bool context:" token-type)))
+            (type-print-failure token (str "Invalid arithmetic expression in bool context: " token-type))))
 
         "comparison"
         (case token-type
