@@ -61,11 +61,10 @@
         (case token-type
           :int (evaluate-var expected rest-expr var-stack method-stack)
           :Identifier (if (contains? var-stack token)
-                        (let [varname (first token-value)
-                              var-type (get var-stack varname)]
+                        (let [var-type (get var-stack token)]
                           (if (some #{var-type} ["int"])
                             (evaluate-var expected rest-expr var-stack method-stack)
-                            (do (type-print-failure token (str "Invalid variable '" varname "' in int expression"))
+                            (do (type-print-failure token (str "Invalid variable '" token-value "' in int expression"))
                                 var-stack)))
                         (type-print-failure token (str "Variable '" (last token) "' has not been initialized")))
           :Plus (evaluate-var expected rest-expr var-stack method-stack)
@@ -83,11 +82,10 @@
           :int (evaluate-var expected rest-expr var-stack method-stack)
           :double (evaluate-var expected rest-expr var-stack method-stack)
           :Identifier (if (contains? var-stack token)
-                        (let [varname (first token-value)
-                              var-type (get var-stack varname)]
+                        (let [var-type (get var-stack token)]
                           (if (some #{var-type} ["int" "double"])
                             (evaluate-var expected rest-expr var-stack method-stack)
-                            (do (type-print-failure token (str "Invalid variable '" varname "' in double expression"))
+                            (do (type-print-failure token (str "Invalid variable '" token-value "' in double expression"))
                                 var-stack)))
                         (type-print-failure token (str "Variable '" (last token) "' has not been initialized")))
           :Plus (evaluate-var expected rest-expr var-stack method-stack)
@@ -117,12 +115,11 @@
           :LeftParen (evaluate-var expected rest-expr var-stack method-stack)
           :RightParen (evaluate-var expected rest-expr var-stack method-stack)
           :Identifier (if (contains? var-stack token)
-                        (let [varname (first token-value)
-                              var-type (get var-stack varname)]
+                        (let [var-type (get var-stack token)]
                           (if (some #{var-type} ["int" "double"])
                             (evaluate-var "arithmetic-in-bool" expression var-stack method-stack)
                             (if (some #{var-type} ["string"])
-                              (type-print-failure token (str "Invalid variable '" varname "' in bool expression"))
+                              (type-print-failure token (str "Invalid variable '" token-value "' in bool expression"))
                               var-stack)))
                         (type-print-failure token (str "Variable '" (last token) "' has not been initialized")))
           :int (evaluate-var "arithmetic-in-bool" expression var-stack method-stack)
@@ -173,12 +170,14 @@
           :int (evaluate-var expected rest-expr var-stack method-stack)
           :double (evaluate-var expected rest-expr var-stack method-stack)
           :bool (evaluate-var expected rest-expr var-stack method-stack)
-          :Identifier (let [var-type (get var-stack token)]
-                        (if (some #{var-type} ["int" "double" "bool" "string"])
-                          (evaluate-var expected rest-expr var-stack method-stack)
-                          (do
-                            (type-print-failure token (str "Variable '" (last token) "' has not been initialized"))
-                            var-stack)))
+          :Identifier (if (contains? var-stack token)
+                        (let [var-type (get var-stack token)]
+                          (if (some #{var-type} ["int" "double" "bool" "string"])
+                            (evaluate-var expected rest-expr var-stack method-stack)
+                            (do
+                              (type-print-failure token (str "Invalid variable '" (last token) "' in Console Write"))
+                              var-stack)))
+                        (type-print-failure token (str "Variable '" (last token) "' has not been initialized")))
           :Plus (evaluate-var expected rest-expr var-stack method-stack)
           :MethodCall (evaluate-method expected expression var-stack method-stack)
           (type-print-failure token "Invalid expression in console write"))
@@ -244,10 +243,10 @@
         (type-check instructions var-stack method-stack current-method)
         var-stack)
 
-      ;; :InstructionReturn
-      ;; (let [expected (:vartype extract)]
-      ;;   (evaluate-var expected expression var-stack method-stack)
-      ;;   var-stack)
+      :InstructionReturn
+      (let [expected (:method-type current-method)]
+        (evaluate-var expected expression var-stack method-stack)
+        var-stack)
 
       :ConsoleWrite
       (let [expected "ConsoleWrite"]
