@@ -226,9 +226,7 @@
         var-stack)
 
       :ElseBlock
-      (let [expected (:vartype extract)
-            instruction (:instruction extract)]
-        (evaluate-var expected expression var-stack method-stack)
+      (let [instruction (:instruction extract)]
         (type-check instruction var-stack method-stack)
 
         var-stack)
