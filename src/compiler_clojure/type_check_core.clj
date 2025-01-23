@@ -131,13 +131,13 @@
         "arithmetic-in-bool"
         (let [next-token (first rest-expr)]
           (case token-type
-            :int (if (and next-token (= (first next-token) :ComparisonOperator))
+            :int (if (and next-token (some #{(first next-token)} [:ComparisonOperator :Modulo]))
                    (evaluate-var "comparison" rest-expr var-stack method-stack)
                    (type-print-failure token "Expected a comparison operator after arithmetic expression"))
-            :double (if (and next-token (= (first next-token) :ComparisonOperator))
+            :double (if (and next-token (some #{(first next-token)} [:ComparisonOperator :Modulo]))
                       (evaluate-var "comparison" rest-expr var-stack method-stack)
                       (type-print-failure token "Expected a comparison operator after arithmetic expression"))
-            :Identifier (if (and next-token (= (first next-token) :ComparisonOperator))
+            :Identifier (if (and next-token (some #{(first next-token)} [:ComparisonOperator :Modulo]))
                           (evaluate-var "comparison" rest-expr var-stack method-stack)
                           (type-print-failure token "Expected a comparison operator after identifier"))
             :MethodCall (evaluate-method expected expression var-stack method-stack)
@@ -146,13 +146,21 @@
         "comparison"
         (case token-type
           :ComparisonOperator (evaluate-var "arithmetic" rest-expr var-stack method-stack)
+          :Modulo (evaluate-var "arithmetic" rest-expr var-stack method-stack)
           (type-print-failure token "Expected a comparison operator"))
 
         "arithmetic"
         (case token-type
           :int (evaluate-var "bool-next" rest-expr var-stack method-stack)
           :double (evaluate-var "bool-next" rest-expr var-stack method-stack)
-          :Identifier (evaluate-var "bool-next" rest-expr var-stack method-stack)
+          :Identifier (if (contains? var-stack token)
+                        (let [var-type (get var-stack token)]
+                          (if (some #{var-type} ["int" "double"])
+                            (evaluate-var "bool-next" expression var-stack method-stack)
+                            (if (some #{var-type} ["string"])
+                              (type-print-failure token (str "Invalid variable '" token-value "' in bool expression"))
+                              var-stack)))
+                        (type-print-failure token (str "Variable '" (last token) "' has not been initialized")))
           :MethodCall (evaluate-method expected expression var-stack method-stack)
           (type-print-failure token "Invalid token anfter comparison operator"))
 
