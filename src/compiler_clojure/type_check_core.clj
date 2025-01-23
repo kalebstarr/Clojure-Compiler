@@ -194,7 +194,7 @@
 
 (declare type-check)
 
-(defn evaluate [extract var-stack method-stack]
+(defn evaluate [extract var-stack method-stack current-method]
   (let [expression (:expression extract)
         type (:type extract)]
     (case type
@@ -221,13 +221,13 @@
       (let [expected (:vartype extract)
             instruction (:instruction extract)]
         (evaluate-var expected expression var-stack method-stack)
-        (type-check instruction var-stack method-stack)
+        (type-check instruction var-stack method-stack current-method)
 
         var-stack)
 
       :ElseBlock
       (let [instruction (:instruction extract)]
-        (type-check instruction var-stack method-stack)
+        (type-check instruction var-stack method-stack current-method)
 
         var-stack)
 
@@ -235,13 +235,13 @@
       (let [expected (:vartype extract)
             instruction (:instruction extract)]
         (evaluate-var expected expression var-stack method-stack)
-        (type-check instruction var-stack method-stack)
+        (type-check instruction var-stack method-stack current-method)
 
         var-stack)
 
       :InstructionBlock
       (let [instructions (:instructions extract)]
-        (type-check instructions var-stack method-stack)
+        (type-check instructions var-stack method-stack current-method)
         var-stack)
 
       ;; :InstructionReturn
@@ -309,10 +309,10 @@
    {}
    static-vars))
 
-(defn type-check [extracts var-stack method-stack]
+(defn type-check [extracts var-stack method-stack current-method]
   (reduce
    (fn [var-stack extract]
-     (evaluate extract var-stack method-stack))
+     (evaluate extract var-stack method-stack current-method))
    var-stack
    extracts))
 
@@ -327,7 +327,7 @@
            var-stack
            params)
           var-stack)]
-    (type-check method-body updated-var-stack method-stack)))
+    (type-check method-body updated-var-stack method-stack method-declaration)))
 
 (defn check [tree]
   (let [extracted (extractor/extract-class-content tree)
