@@ -21,3 +21,6 @@ pom.xml.asc
 
 # Sample C# files
 Sample*.cs
+
+# Sample Jasmin files
+Sample*.j
