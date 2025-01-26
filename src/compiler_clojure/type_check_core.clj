@@ -54,8 +54,7 @@
   (when (seq expression)
     (let [token (first expression)
           rest-expr (rest expression)
-          token-type (first token)
-          token-value (rest token)]
+          token-type (first token)]
       (case expected
         "int"
         (case token-type
@@ -119,11 +118,12 @@
                           (if (some #{var-type} ["int" "double"])
                             (evaluate-var "arithmetic-in-bool" expression var-stack method-stack)
                             (if (some #{var-type} ["string"])
-                              (type-print-failure token (str "Invalid variable '" (last token) "' in bool expression"))
+                              (evaluate-var "string-in-bool" expression var-stack method-stack)
                               var-stack)))
                         (type-print-failure token (str "Variable '" (last token) "' has not been initialized")))
           :int (evaluate-var "arithmetic-in-bool" expression var-stack method-stack)
           :double (evaluate-var "arithmetic-in-bool" expression var-stack method-stack)
+          :string (evaluate-var "string-in-bool" expression var-stack method-stack)
           :LogicNot (evaluate-var expected rest-expr var-stack method-stack)
           :MethodCall (evaluate-method expected expression var-stack method-stack)
           (type-print-failure token "Invalid token in bool expression"))
@@ -143,11 +143,37 @@
             :MethodCall (evaluate-method expected expression var-stack method-stack)
             (type-print-failure token (str "Invalid arithmetic expression in bool context: " token-type))))
 
+        "string-in-bool"
+        (let [next-token (first rest-expr)]
+          (case token-type
+            :string
+            (if (and next-token (= (first next-token) :ComparisonOperator))
+              (evaluate-var "string-comparison" rest-expr var-stack method-stack)
+              (type-print-failure token "Expected a string comparison operator after string expression"))
+
+            :Identifier
+            (if (and (contains? var-stack token)
+                     (= (get var-stack token) "string")
+                     next-token
+                     (= (first next-token) :ComparisonOperator))
+              (evaluate-var "string-comparison" rest-expr var-stack method-stack)
+              (type-print-failure token "Expected a string variable and comparison operator"))
+
+            :MethodCall
+            (evaluate-method "string" expression var-stack method-stack)
+
+            (type-print-failure token "Invalid string expression in bool context")))
+
         "comparison"
         (case token-type
           :ComparisonOperator (evaluate-var "arithmetic" rest-expr var-stack method-stack)
           :Modulo (evaluate-var "arithmetic" rest-expr var-stack method-stack)
           (type-print-failure token "Expected a comparison operator"))
+
+        "string-comparison"
+        (case token-type
+          :ComparisonOperator (evaluate-var "string-operand" rest-expr var-stack method-stack)
+          (type-print-failure token "Expected a string comparison operator"))
 
         "arithmetic"
         (case token-type
@@ -163,6 +189,15 @@
                         (type-print-failure token (str "Variable '" (last token) "' has not been initialized")))
           :MethodCall (evaluate-method expected expression var-stack method-stack)
           (type-print-failure token "Invalid token anfter comparison operator"))
+
+        "string-operand"
+        (case token-type
+          :string (evaluate-var "bool-next" rest-expr var-stack method-stack)
+          :Identifier (if (and (contains? var-stack token) (= (get var-stack token) "string"))
+                        (evaluate-var "bool-next" rest-expr var-stack method-stack)
+                        (type-print-failure token "Invalid variable in string comparison"))
+          :MethodCall (evaluate-method "string" expression var-stack method-stack)
+          (type-print-failure token "Invalid operand in string comparison"))
 
         "bool-next"
         (let [next-token (first rest-expr)]
