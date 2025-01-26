@@ -34,7 +34,10 @@
 
 (defn read-file [filename]
   (try
-    (slurp filename)
+    (let [content (slurp filename)
+          no-multiline-comments (clojure.string/replace content #"(?s)/\*.*?\*/" "")
+          no-comments (clojure.string/replace no-multiline-comments #"//.*" "")]
+      no-comments)
     (catch java.io.FileNotFoundException e
       (throw (Exception. (str "File was not found: " e))))))
 
