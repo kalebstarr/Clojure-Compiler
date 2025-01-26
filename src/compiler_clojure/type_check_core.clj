@@ -238,77 +238,77 @@
 
 (defn evaluate [extract var-stack method-stack current-method]
   (let [expression (:expression extract)
-        type (:type extract)]
-    (case type
-      :VariableDeclaration
-      (let [varname (:varname extract)]
-        (if (not (contains? var-stack varname))
+        type (:type extract)
+        updated-var-stack
+        (case type
+          :VariableDeclaration
+          (let [varname (:varname extract)]
+            (if (not (contains? var-stack varname))
+              (let [expected (:vartype extract)
+                    new-stack (assoc var-stack varname expected)]
+                (evaluate-var expected expression new-stack method-stack)
+                new-stack)
+              (do (type-print-failure varname "Invalid variable declaration")
+                  var-stack)))
+
+          :VariableAssignment
+          (let [varname (:varname extract)]
+            (if (contains? var-stack varname)
+              (let [expected (get var-stack varname)]
+                (evaluate-var expected expression var-stack method-stack))
+              (do (type-print-failure varname (str "Variable '" (last varname) "' has not been initialized"))
+                  var-stack)))
+
+          :IfBlock
           (let [expected (:vartype extract)
-                updated-var-stack (assoc var-stack varname expected)]
-            (evaluate-var expected expression updated-var-stack method-stack)
-            updated-var-stack)
-          (do (type-print-failure varname "Invalid variable declaration")
-              var-stack)))
+                instruction (:instruction extract)]
+            (evaluate-var expected expression var-stack method-stack)
+            (type-check instruction var-stack method-stack current-method)
+            var-stack)
 
-      :VariableAssignment
-      (let [varname (:varname extract)]
-        (if (contains? var-stack varname)
-          (let [expected (get var-stack varname)
-                updated-var-stack (evaluate-var expected expression var-stack method-stack)]
-            updated-var-stack)
-          (do (type-print-failure varname (str "Variable '" (last varname) "' has not been initialized"))
-              var-stack)))
+          :ElseBlock
+          (let [instruction (:instruction extract)]
+            (type-check instruction var-stack method-stack current-method)
+            var-stack)
 
-      :IfBlock
-      (let [expected (:vartype extract)
-            instruction (:instruction extract)]
-        (evaluate-var expected expression var-stack method-stack)
-        (type-check instruction var-stack method-stack current-method)
+          :WhileBlock
+          (let [expected (:vartype extract)
+                instruction (:instruction extract)]
+            (evaluate-var expected expression var-stack method-stack)
+            (type-check instruction var-stack method-stack current-method)
+            var-stack)
 
-        var-stack)
+          :InstructionBlock
+          (let [instructions (:instructions extract)]
+            (type-check instructions var-stack method-stack current-method)
+            var-stack)
 
-      :ElseBlock
-      (let [instruction (:instruction extract)]
-        (type-check instruction var-stack method-stack current-method)
+          :InstructionReturn
+          (let [expected (:method-type current-method)]
+            (evaluate-var expected expression var-stack method-stack)
+            var-stack)
 
-        var-stack)
+          :ConsoleWrite
+          (let [expected "ConsoleWrite"]
+            (evaluate-var expected expression var-stack method-stack)
+            var-stack)
 
-      :WhileBlock
-      (let [expected (:vartype extract)
-            instruction (:instruction extract)]
-        (evaluate-var expected expression var-stack method-stack)
-        (type-check instruction var-stack method-stack current-method)
+          :MethodCall
+          (let [{:keys [name arguments]} extract
+                filtered-arguments (filter #(not= "," %) arguments)
+                extracted-arguments (map extractor/extract-expression filtered-arguments)]
+            (if (contains? method-stack name)
+              (if (= (count (:params (get method-stack name))) (count extracted-arguments))
+                (let [pairs (map vector (:params (get method-stack name)) extracted-arguments)]
+                  (evaluate-methodcall pairs var-stack method-stack))
+                (type-print-failure name (str "Wrong amount of arguments in method call '" (last name) "'")))
+              (type-print-failure name (str "Method '" (last name) "' has not been declared")))
+            var-stack)
 
-        var-stack)
+          var-stack)]
 
-      :InstructionBlock
-      (let [instructions (:instructions extract)]
-        (type-check instructions var-stack method-stack current-method)
-        var-stack)
-
-      :InstructionReturn
-      (let [expected (:method-type current-method)]
-        (evaluate-var expected expression var-stack method-stack)
-        var-stack)
-
-      :ConsoleWrite
-      (let [expected "ConsoleWrite"]
-        (evaluate-var expected expression var-stack method-stack)
-        var-stack)
-
-      :MethodCall
-      (let [{:keys [name arguments]} extract
-            filtered-arguments (filter #(not= "," %) arguments)
-            extracted-arguments (map extractor/extract-expression filtered-arguments)]
-        (if (contains? method-stack name)
-          (if (= (count (:params (get method-stack name))) (count extracted-arguments))
-            (let [pairs (map vector (:params (get method-stack name)) extracted-arguments)]
-              (evaluate-methodcall pairs var-stack method-stack))
-            (type-print-failure name (str "Wrong amount of arguments in method call '" (last name) "'")))
-          (type-print-failure name (str "Method '" (last name) "' has not been declared")))
-        var-stack)
-
-      var-stack)))
+    {:extract extract
+     :var-stack updated-var-stack}))
 
 (defn collect-methods [extract method-stack]
   (let [method-name (:method-name extract)]
@@ -352,11 +352,15 @@
    static-vars))
 
 (defn type-check [extracts var-stack method-stack current-method]
-  (reduce
-   (fn [var-stack extract]
-     (evaluate extract var-stack method-stack current-method))
-   var-stack
-   extracts))
+  (let [results
+        (reduce
+         (fn [{:keys [acc var-stack]} extract]
+           (let [evaluation (evaluate extract var-stack method-stack current-method)]
+             {:acc (conj acc evaluation)
+              :var-stack (:var-stack evaluation)}))
+         {:acc [] :var-stack var-stack}
+         extracts)]
+    (:acc results)))
 
 (defn type-check-method-declaration [method-declaration var-stack method-stack]
   (let [{:keys [params method-body]} method-declaration
