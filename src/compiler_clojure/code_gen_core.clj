@@ -21,16 +21,19 @@
     (throw (Exception. (str "Unknown type: " type)))))
 
 (defn generate-method [method]
-  (str ".method public static "
-       (pascal-case->camel-case (last (:method-name (:current-method method))))
-       "("
-       (str/join (map #(convert-type (last (extractor/extract-parameter %))) (:params (:current-method method))))
-       ")"
-       (convert-type (:method-type (:current-method method)))
-       "\n"
-       (when (= "void" (:method-type (:current-method method)))
-         "return\n")
-       ".end method"))
+  (let [current-method (:current-method method)]
+    (str ".method public static "
+         (pascal-case->camel-case (last (:method-name current-method)))
+         "("
+         (str/join (map #(convert-type (last (extractor/extract-parameter %)))
+                        (:params current-method)))
+         ")"
+         (convert-type (:method-type current-method))
+         "\n"
+         (when (= "void" (:method-type current-method))
+           "return\n")
+
+         ".end method")))
 
 (defn generate-class [xs]
   (println (str ".class public " (last (:class-name xs)) "\n"
