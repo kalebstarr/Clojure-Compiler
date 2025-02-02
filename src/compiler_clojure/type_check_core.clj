@@ -6,6 +6,7 @@
 (defn type-print-failure [token msg]
   (let [{:instaparse.gll/keys [end-line end-column]} (meta token)
         error-msg (str "Type Error: Line " end-line ": Column " end-column ": " msg)]
+    (println error-msg)
     (throw (ex-info error-msg {}))))
 
 (declare evaluate-var)
@@ -347,7 +348,7 @@
   (reduce
    (fn [var-stack extract]
      (collect-static-vars extract var-stack))
-   {}
+   (array-map)
    static-vars))
 
 (defn type-check [extracts var-stack method-stack current-method]
