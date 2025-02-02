@@ -134,10 +134,6 @@
          ".end method")))
 
 (defn generate-class [xs]
-  (println (str ".class public " (last (:class-name xs)) "\n"
-                ".super java/lang/Object\n\n"
-                (str/join "\n\n" (map generate-method (:class-content xs)))))
-;;   (spit "resources/abc.j" (str ".class public " (last (:class-name xs)) "\n"
-;;                                ".super java/lang/Object\n\n"
-;;                                (map generate-method (:class-content xs))))
-  )
+  (spit "Program.j" (str ".class public " (last (:class-name xs)) "\n"
+                         ".super java/lang/Object\n\n"
+                         (str/join "\n\n" (map generate-method (:class-content xs))))))
