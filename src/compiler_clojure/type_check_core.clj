@@ -359,7 +359,8 @@
               :var-stack (:var-stack evaluation)}))
          {:acc [] :var-stack var-stack}
          extracts)]
-    (:acc results)))
+    {:current-method current-method
+     :instructions (:acc results)}))
 
 (defn type-check-method-declaration [method-declaration var-stack method-stack]
   (let [{:keys [params method-body]} method-declaration
@@ -372,7 +373,7 @@
            var-stack
            params)
           var-stack)]
-    (type-check method-body updated-var-stack method-stack method-declaration)))
+    (list (type-check method-body updated-var-stack method-stack method-declaration))))
 
 (defn check [tree]
   (let [extracted (extractor/extract-class-content tree)
