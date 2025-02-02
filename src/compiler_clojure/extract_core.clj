@@ -165,8 +165,9 @@
     (case (first tree)
       :ClassDeclaration
       (m/match tree
-        [:ClassDeclaration _ _ & ?other]
-        ?other
+        [:ClassDeclaration _ ?name & ?other]
+        [{:name ?name
+         :other ?other}]
 
         _ tree)
 

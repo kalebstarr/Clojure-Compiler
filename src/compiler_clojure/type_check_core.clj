@@ -376,9 +376,11 @@
     (list (type-check method-body updated-var-stack method-stack method-declaration))))
 
 (defn check [tree]
-  (let [extracted (extractor/extract-class-content tree)
+  (let [{:keys [name other]} (extractor/extract-class-content tree)
+        extracted other
         static-var-stack (collect-static-var-stack
                           (extractor/extract-static-var-declarations extracted))
         method-declarations (extractor/extract-method-declaration extracted)
         method-stack (collect-method-stack method-declarations)]
-    (mapcat #(type-check-method-declaration % static-var-stack method-stack) method-declarations)))
+    {:class-name name
+     :class-content (mapcat #(type-check-method-declaration % static-var-stack method-stack) method-declarations)}))
