@@ -124,6 +124,9 @@
     [:Parameter [:Type ?t] ?name]
     [?name, ?t]
 
+    [:Parameter [:Type ?t ?brackets] ?name]
+    [?name, (str ?t ?brackets)]
+
     _ parameter))
 
 (defn extract-method-declaration [node]
