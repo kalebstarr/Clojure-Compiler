@@ -20,19 +20,36 @@
 
     (throw (Exception. (str "Unknown type: " type)))))
 
+(defn load-token [token]
+  (let [token-str (str token)]
+    (cond
+      (re-matches #"[+-]?[0-9]+(\.[0-9]+)?" token-str) (str "ldc " token-str)
+      (or (= token-str "true") (= token-str "false"))
+        (if (= token-str "true") "iconst_1" "iconst_0")
+      :else (str "iload " token-str))))
+
+(defn already-loaded? [s]
+  (or (.startsWith s "ldc ")
+      (.startsWith s "iload ")
+      (.startsWith s "iconst_")))
+
 (defn rpn [tokens]
   (let [ops {"+" "iadd", "-" "isub", "*" "imul", "/" "idiv", "%" "irem"}
         result (first
                 (reduce
                  (fn [stack token]
                    (if (contains? ops token)
-                     (cons (str "ldc " (first stack) "\n"
-                                "ldc " (second stack) "\n"
-                                (ops token))
-                           (drop 2 stack))
+                     (let [operand1 (load-token (first stack))
+                           operand2 (load-token (second stack))]
+                       (cons (str operand1 "\n" operand2 "\n" (ops token))
+                             (drop 2 stack)))
                      (cons token stack)))
                  [] tokens))]
-    (if (sequential? result) result [(str "ldc " result)])))
+    (if (sequential? result)
+      result
+      (if (and (string? result) (already-loaded? result))
+        [result]
+        [(load-token result)]))))
 
 (defn shunting-yard [tokens]
   (let [ops {"+" 1, "-" 1, "*" 2, "/" 2, "%" 2}]
