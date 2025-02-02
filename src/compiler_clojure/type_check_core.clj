@@ -59,8 +59,8 @@
         "int"
         (case token-type
           :int (evaluate-var expected rest-expr var-stack method-stack)
-          :Identifier (if (contains? var-stack token)
-                        (let [var-type (get var-stack token)]
+          :Identifier (if (contains? (:vars var-stack) token)
+                        (let [var-type (:vartype (get (:vars var-stack) token))]
                           (if (some #{var-type} ["int"])
                             (evaluate-var expected rest-expr var-stack method-stack)
                             (do (type-print-failure token (str "Invalid variable '" (last token) "' in int expression"))
@@ -80,8 +80,8 @@
         (case token-type
           :int (evaluate-var expected rest-expr var-stack method-stack)
           :double (evaluate-var expected rest-expr var-stack method-stack)
-          :Identifier (if (contains? var-stack token)
-                        (let [var-type (get var-stack token)]
+          :Identifier (if (contains? (:vars var-stack) token)
+                        (let [var-type (:vartype (get (:vars var-stack) token))]
                           (if (some #{var-type} ["int" "double"])
                             (evaluate-var expected rest-expr var-stack method-stack)
                             (do (type-print-failure token (str "Invalid variable '" (last token) "' in double expression"))
@@ -101,7 +101,7 @@
         (case token-type
           :string (evaluate-var expected rest-expr var-stack method-stack)
           :Plus (evaluate-var expected rest-expr var-stack method-stack)
-          :Identifier (if (contains? var-stack token)
+          :Identifier (if (contains? (:vars var-stack) token)
                         (evaluate-var expected rest-expr var-stack method-stack)
                         (type-print-failure token (str "Variable '" (last token) "' has not been initialized")))
           :MethodCall (evaluate-method expected expression var-stack method-stack)
@@ -113,13 +113,12 @@
           :LogicOperator (evaluate-var expected rest-expr var-stack method-stack)
           :LeftParen (evaluate-var expected rest-expr var-stack method-stack)
           :RightParen (evaluate-var expected rest-expr var-stack method-stack)
-          :Identifier (if (contains? var-stack token)
-                        (let [var-type (get var-stack token)]
-                          (if (some #{var-type} ["int" "double"])
-                            (evaluate-var "arithmetic-in-bool" expression var-stack method-stack)
-                            (if (some #{var-type} ["string"])
-                              (evaluate-var "string-in-bool" expression var-stack method-stack)
-                              var-stack)))
+          :Identifier (if (contains? (:vars var-stack) token)
+                        (let [var-type (:vartype (get (:vars var-stack) token))]
+                          (cond
+                            (some #{var-type} ["int" "double"]) (evaluate-var "arithmetic-in-bool" expression var-stack method-stack)
+                            (some #{var-type} ["string"]) (evaluate-var "string-in-bool" expression var-stack method-stack)
+                            :else var-stack))
                         (type-print-failure token (str "Variable '" (last token) "' has not been initialized")))
           :int (evaluate-var "arithmetic-in-bool" expression var-stack method-stack)
           :double (evaluate-var "arithmetic-in-bool" expression var-stack method-stack)
@@ -146,22 +145,16 @@
         "string-in-bool"
         (let [next-token (first rest-expr)]
           (case token-type
-            :string
-            (if (and next-token (= (first next-token) :ComparisonOperator))
-              (evaluate-var "string-comparison" rest-expr var-stack method-stack)
-              (type-print-failure token "Expected a string comparison operator after string expression"))
-
-            :Identifier
-            (if (and (contains? var-stack token)
-                     (= (get var-stack token) "string")
-                     next-token
-                     (= (first next-token) :ComparisonOperator))
-              (evaluate-var "string-comparison" rest-expr var-stack method-stack)
-              (type-print-failure token "Expected a string variable and comparison operator"))
-
-            :MethodCall
-            (evaluate-method "string" expression var-stack method-stack)
-
+            :string (if (and next-token (= (first next-token) :ComparisonOperator))
+                      (evaluate-var "string-comparison" rest-expr var-stack method-stack)
+                      (type-print-failure token "Expected a string comparison operator after string expression"))
+            :Identifier (if (and (contains? (:vars var-stack) token)
+                                 (= (:vartype (get (:vars var-stack) token)) "string")
+                                 next-token
+                                 (= (first next-token) :ComparisonOperator))
+                         (evaluate-var "string-comparison" rest-expr var-stack method-stack)
+                         (type-print-failure token "Expected a string variable and comparison operator"))
+            :MethodCall (evaluate-method "string" expression var-stack method-stack)
             (type-print-failure token "Invalid string expression in bool context")))
 
         "comparison"
@@ -179,8 +172,8 @@
         (case token-type
           :int (evaluate-var "bool-next" rest-expr var-stack method-stack)
           :double (evaluate-var "bool-next" rest-expr var-stack method-stack)
-          :Identifier (if (contains? var-stack token)
-                        (let [var-type (get var-stack token)]
+          :Identifier (if (contains? (:vars var-stack) token)
+                        (let [var-type (:vartype (get (:vars var-stack) token))]
                           (if (some #{var-type} ["int" "double"])
                             (evaluate-var "bool-next" expression var-stack method-stack)
                             (if (some #{var-type} ["string"])
@@ -188,12 +181,13 @@
                               var-stack)))
                         (type-print-failure token (str "Variable '" (last token) "' has not been initialized")))
           :MethodCall (evaluate-method expected expression var-stack method-stack)
-          (type-print-failure token "Invalid token anfter comparison operator"))
+          (type-print-failure token "Invalid token after comparison operator"))
 
         "string-operand"
         (case token-type
           :string (evaluate-var "bool-next" rest-expr var-stack method-stack)
-          :Identifier (if (and (contains? var-stack token) (= (get var-stack token) "string"))
+          :Identifier (if (and (contains? (:vars var-stack) token)
+                               (= (:vartype (get (:vars var-stack) token)) "string"))
                         (evaluate-var "bool-next" rest-expr var-stack method-stack)
                         (type-print-failure token "Invalid variable in string comparison"))
           :MethodCall (evaluate-method "string" expression var-stack method-stack)
@@ -213,13 +207,12 @@
           :int (evaluate-var expected rest-expr var-stack method-stack)
           :double (evaluate-var expected rest-expr var-stack method-stack)
           :bool (evaluate-var expected rest-expr var-stack method-stack)
-          :Identifier (if (contains? var-stack token)
-                        (let [var-type (get var-stack token)]
+          :Identifier (if (contains? (:vars var-stack) token)
+                        (let [var-type (:vartype (get (:vars var-stack) token))]
                           (if (some #{var-type} ["int" "double" "bool" "string"])
                             (evaluate-var expected rest-expr var-stack method-stack)
-                            (do
-                              (type-print-failure token (str "Invalid variable '" (last token) "' in Console Write"))
-                              var-stack)))
+                            (do (type-print-failure token (str "Invalid variable '" (last token) "' in Console Write"))
+                                var-stack)))
                         (type-print-failure token (str "Variable '" (last token) "' has not been initialized")))
           :Plus (evaluate-var expected rest-expr var-stack method-stack)
           :MethodCall (evaluate-method expected expression var-stack method-stack)
@@ -242,10 +235,14 @@
         updated-var-stack
         (case type
           :VariableDeclaration
-          (let [varname (:varname extract)]
-            (if (not (contains? var-stack varname))
+          (let [varname (:varname extract)
+                inc-val (if (= (:vartype extract) "double") 2 1)]
+            (if (not (contains? (:vars var-stack) varname))
               (let [expected (:vartype extract)
-                    new-stack (assoc var-stack varname expected)]
+                    entry {:vartype expected :index (:next-index var-stack)}
+                    new-vars (assoc (:vars var-stack) varname entry)
+                    new-stack (assoc var-stack :vars new-vars
+                                     :next-index (+ (:next-index var-stack) inc-val))]
                 (evaluate-var expected expression new-stack method-stack)
                 new-stack)
               (do (type-print-failure varname "Invalid variable declaration")
@@ -253,8 +250,8 @@
 
           :VariableAssignment
           (let [varname (:varname extract)]
-            (if (contains? var-stack varname)
-              (let [expected (get var-stack varname)]
+            (if (contains? (:vars var-stack) varname)
+              (let [expected (:vartype (get (:vars var-stack) varname))]
                 (evaluate-var expected expression var-stack method-stack))
               (do (type-print-failure varname (str "Variable '" (last varname) "' has not been initialized"))
                   var-stack)))
@@ -337,10 +334,11 @@
 
 (defn collect-static-vars [extract var-stack]
   (let [varname (:varname extract)]
-    (if (not (contains? var-stack varname))
+    (if (not (contains? (:vars var-stack) varname))
       (let [expected (:vartype extract)
-            updated-var-stack (assoc var-stack varname expected)]
-        updated-var-stack)
+            entry {:vartype expected :index 0}
+            new-vars (assoc (:vars var-stack) varname entry)]
+        (assoc var-stack :vars new-vars))
       (do (type-print-failure varname "Invalid variable declaration")
           var-stack))))
 
@@ -348,7 +346,7 @@
   (reduce
    (fn [var-stack extract]
      (collect-static-vars extract var-stack))
-   (array-map)
+   {:vars (array-map) :next-index 0}
    static-vars))
 
 (defn type-check [extracts var-stack method-stack current-method]
@@ -369,8 +367,14 @@
         (if (seq params)
           (reduce
            (fn [acc p]
-             (let [[varname vartype] (extractor/extract-parameter p)]
-               (assoc acc varname vartype)))
+             (let [[varname vartype] (extractor/extract-parameter p)
+                   inc-val (if (= vartype "double") 2 1)]
+               (if (not (contains? (:vars acc) varname))
+                 (let [entry {:vartype vartype :index (:next-index acc)}
+                       new-vars (assoc (:vars acc) varname entry)]
+                   (assoc acc :vars new-vars :next-index (+ (:next-index acc) inc-val)))
+                 (do (type-print-failure varname "Duplicate parameter declaration")
+                     acc))))
            var-stack
            params)
           var-stack)]
