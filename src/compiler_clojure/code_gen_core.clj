@@ -49,11 +49,24 @@
       [[] ()]
       tokens))))
 
+(defn convert-var-type [var-type]
+  (case var-type
+    "int" "istore"
+    "double" "dstore"
+    "string" "astore"
+    "bool" "istore"
+
+    (throw (Exception. (str "Unknown type: " type)))))
+
 (defn generate-instruction [instruction]
   (let [extract (:extract instruction)]
     (case (:type extract)
       :VariableDeclaration
-      (str/join "\n" (rpn (shunting-yard (:expression extract))))
+      (str (first (rpn (shunting-yard (:expression extract))))
+           "\n"
+           (convert-var-type (:vartype extract))
+           " "
+           (:index (get (:vars (:var-stack instruction)) (:varname extract))))
 
       :VariableAssignment
       "Variable Assignment\n"
