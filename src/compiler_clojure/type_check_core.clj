@@ -4,10 +4,9 @@
 
 ;; Add more expressive print including expected and received types (?)
 (defn type-print-failure [token msg]
-  (let [{:instaparse.gll/keys [end-line end-column]} (meta token)]
-    (println (str "Type Error: Line " end-line ": Column " end-column ": " msg))
-    ;; (System/exit 1)
-    ))
+  (let [{:instaparse.gll/keys [end-line end-column]} (meta token)
+        error-msg (str "Type Error: Line " end-line ": Column " end-column ": " msg)]
+    (throw (ex-info error-msg {}))))
 
 (declare evaluate-var)
 
