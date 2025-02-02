@@ -58,7 +58,8 @@
                     (read-file)
                     (parser/parse-content)
                     (transform-parsed)
-                    (checker/check))
+                    (checker/check)
+                    (println))
       :debug (do
                (println message)
                (parser/parser-debug (read-file file))))))

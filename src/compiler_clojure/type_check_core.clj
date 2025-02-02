@@ -381,5 +381,4 @@
                           (extractor/extract-static-var-declarations extracted))
         method-declarations (extractor/extract-method-declaration extracted)
         method-stack (collect-method-stack method-declarations)]
-    (doseq [decl method-declarations]
-      (type-check-method-declaration decl static-var-stack method-stack))))
+    (mapcat #(type-check-method-declaration % static-var-stack method-stack) method-declarations)))
