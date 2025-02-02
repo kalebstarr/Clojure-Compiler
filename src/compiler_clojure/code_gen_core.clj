@@ -20,6 +20,38 @@
 
     (throw (Exception. (str "Unknown type: " type)))))
 
+(defn generate-instruction [instruction]
+  (let [extract (:extract instruction)] 
+    (case (:type extract)
+      :VariableDeclaration
+      "Variable Declaration\n"
+
+      :VariableAssignment
+      "Variable Assignment\n"
+
+      :IfBlock
+      "If Block\n"
+
+      :ElseBlock
+      "Else Block\n"
+
+      :WhileBlock
+      "While Block\n"
+
+      :InstructionBlock
+      "Instruction Block\n"
+
+      :InstructionReturn
+      "Instruction Return\n"
+
+      :ConsoleWrite
+      "Console Write\n"
+
+      :MethodCall
+      "Method Call\n"
+
+      (throw (Exception. (str "Unknown instruction type: " (:type extract)))))))
+
 (defn generate-method [method]
   (let [current-method (:current-method method)]
     (str ".method public static "
@@ -30,6 +62,9 @@
          ")"
          (convert-type (:method-type current-method))
          "\n"
+
+         (str/join "\n" (map generate-instruction (:instructions method)))
+
          (when (= "void" (:method-type current-method))
            "return\n")
 
